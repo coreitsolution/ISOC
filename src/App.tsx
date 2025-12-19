@@ -152,10 +152,10 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     dispatch(clearError())
-    // if (authData && !authData.token) {
-    //   navigate('/login', { replace: true })
-    // }
-    // else {
+    if (authData && !authData.token) {
+      navigate('/login', { replace: true })
+    }
+    else {
       dispatch(fetchAreasThunk());
       dispatch(fetchProvincesThunk(
         {
@@ -235,7 +235,7 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
         }
       ));
       dispatch(fetchVehicleCountThunk());
-    // }
+    }
   }, [dispatch, navigate, authData]);
 
   useEffect(() => {
@@ -512,7 +512,7 @@ function App() {
   
   return (
     <div ref={constraintsRef} className='min-h-screen min-w-screen'>
-      {/* <AuthListener /> */}
+      <AuthListener />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route
