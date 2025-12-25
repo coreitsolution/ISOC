@@ -310,7 +310,7 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
       const deletePlate = await fetchClient<SpecialPlateResponse>(combineURL(API_URL, `/special-plates/delete`), {
         method: "DELETE",
         queryParams: {
-          uid: [uid].toString()
+          uids: [uid].toString()
         },
       })
 
@@ -590,7 +590,7 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
                             (() => {
                               const isFilesDataExist = Array.isArray(data.filesData) && data.filesData.length > 0;
                               return (
-                                <TableCell align="center" sx={{ backgroundColor: "#48494B", color: "#FFFFFF", height: "83px" }}>
+                                <TableCell align="center" sx={{ backgroundColor: "#393B3A", color: "#FFFFFF", height: "83px" }}>
                                   <IconButton
                                     sx={{
                                       borderRadius: "4px !important",
