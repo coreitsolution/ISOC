@@ -22,7 +22,7 @@ import { SETTING_ROW_PER_PAGES } from "../../constants/dropdown";
 import SearchIcon from '@mui/icons-material/Search';
 // import CSVIcon from "../../assets/icons/csv.png";
 import { Icon } from '../../components/icons/Icon'
-import { Pencil } from 'lucide-react';
+import { Pencil, TriangleAlert } from 'lucide-react';
 
 // i18n
 import { useTranslation } from 'react-i18next';
@@ -46,6 +46,7 @@ import {
   CameraResponse, 
   CheckpointResponse,
   Checkpoint,
+  VerifyLicenseResponse,
 } from "../../features/types";
 import { 
   DistrictsResponse, 
@@ -100,11 +101,14 @@ const Setting: React.FC<SettingProps> = ({}) => {
     (state: RootState) => state.dropdownData
   );
 
+  const { machineId } = useSelector(
+    (state: RootState) => state.licenseVerifyData
+  );
+
   const cameraRefreshKey = useSelector((state: RootState) => state.refresh.cameraRefreshKey);
 
   useEffect(() => {
     fetchCameras(page, rowsPerPage);
-
     return () => {
       setCameraList([]);
     }
@@ -144,12 +148,23 @@ const Setting: React.FC<SettingProps> = ({}) => {
               serial_number,
               license_key, 
             } = await fetchCheckpointInfo(camera.checkpoint_uid);
+            let isLicenseExpire = false;
+            if (machineId) {
+              const res = await checkVerifyLicense(
+                machineId,
+                serial_number,
+                license_key
+              );
+              isLicenseExpire = res;
+            }
+            
             return {
               ...camera,
               checkpoint_name,
               organization,
               serial_number,
               license_key,
+              is_license_expire: isLicenseExpire,
             }
           })
         );
@@ -185,16 +200,22 @@ const Setting: React.FC<SettingProps> = ({}) => {
         },
       });
 
-      if (response.success && response.data.length > 0) {
+      if (response.success && response.data.length > 0 && machineId) {
         const provinceName = sliceDropdown.provinces && sliceDropdown.provinces.data && sliceDropdown.provinces.data.find(p => p.province_code === response.data[0].province_code)?.name_th || "";
         const districtName = await fetchDistrictName(response.data[0].district_code);
         const subdistrictName = await fetchSubdistrictName(response.data[0].subdistrict_code);
+        const isLicenseExpire = await checkVerifyLicense(
+          machineId,
+          response.data[0].serial_number,
+          response.data[0].license_key
+        );
 
         setCheckpointData({
           ...response.data[0],
           province_name: provinceName,
           district_name: districtName,
           subdistrict_name: subdistrictName,
+          is_license_expire: isLicenseExpire,
         });
 
       } 
@@ -242,8 +263,8 @@ const Setting: React.FC<SettingProps> = ({}) => {
   const fetchCheckpointInfo = async (checkpoint_uid: string) => {
     let checkpoint_name = "";
     let organization = "";
-    let serial_number = "" as string | null;
-    let license_key = "" as string | null;
+    let serial_number = "";
+    let license_key = "";
     try {
       const response = await fetchClient<CheckpointResponse>(combineURL(CENTER_API, "/checkpoints/get"), {
         method: "GET",
@@ -273,6 +294,33 @@ const Setting: React.FC<SettingProps> = ({}) => {
         serial_number,
         license_key,
       };
+    }
+  }
+
+  const checkVerifyLicense = async (machineId: string, serialNumber: string, licenseKey: string) => {
+    let isLicenseExpire = false;
+    try {
+      const body = {
+        machineId: machineId,
+        serialNumber: serialNumber,
+        licenseKey: licenseKey,
+      };
+      const res = await fetchClient<VerifyLicenseResponse>(combineURL(CENTER_API, "/checkpoints/verify-license"), {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+
+      if (!res.success) {
+        isLicenseExpire = true;
+      }
+
+    }
+    catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      PopupMessage(t('message.error.error-while-fetching-data'), errorMessage, "error");
+    }
+    finally {
+      return isLicenseExpire;
     }
   }
 
@@ -483,9 +531,24 @@ const Setting: React.FC<SettingProps> = ({}) => {
                       <TableCell sx={{ backgroundColor: "#48494B", color: "#FFFFFF", height: "83px", textAlign: "center" }}>
                         {index + 1}
                       </TableCell>
-                      <TableCell sx={{ backgroundColor: "#393B3A", color: "#FFFFFF", height: "83px" }}>
-                        {data.checkpoint_name}
-                      </TableCell>
+                      {
+                        (() => {
+                          return (
+                            <TableCell sx={{ backgroundColor: "#393B3A", color: "#FFFFFF", height: "83px" }}>
+                              <div className='flex gap-2 items-center'>
+                                <p>{data.checkpoint_name}</p>
+                                {
+                                  data.is_license_expire && data.is_license_expire && (
+                                    <div className='flex gap-1' title={t("text.license-expire")}>
+                                      <TriangleAlert color="yellow" className="w-6 h-6"/>
+                                    </div>
+                                  )
+                                }
+                              </div>
+                            </TableCell>
+                          )
+                        })()
+                      }
                       <TableCell sx={{ backgroundColor: "#48494B", color: "#FFFFFF", height: "83px", textAlign: "center" }}>
                         {
                           (() => {

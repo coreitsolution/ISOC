@@ -23,6 +23,8 @@ import DatePickerBuddhist from "../../../components/date-picker-buddhist/DatePic
 // Types
 import {
   WatchListFileData,
+  WatchListImageResponse,
+  WatchListImageData,
   SuspectPeopleCreateResponse,
   SuspectPeople,
   WatchListFileResponse,
@@ -41,7 +43,7 @@ import UploadIcon from "../../../assets/icons/upload.png";
 import { useTranslation } from 'react-i18next';
 
 // Utils
-import { formatPhone, formatThaiID, getId, getFilesDiff } from '../../../utils/commonFunction';
+import { formatPhone, formatThaiID, getId, getStringId, getFilesDiff } from '../../../utils/commonFunction';
 import { PopupMessage, PopupMessageWithCancel } from '../../../utils/popupMessage';
 import { fetchClient, combineURL } from "../../../utils/fetchClient";
 
@@ -54,9 +56,9 @@ interface FormData {
   lastname: string
   id_card_number: string
   address: string
-  province_id: number
-  district_id: number
-  subdistrict_id: number
+  province_code: string
+  district_code: string
+  subdistrict_code: string
   zipcode: string
   person_class_id: number
   case_number: string
@@ -65,7 +67,7 @@ interface FormData {
   behavior: string
   case_owner_name: string
   case_owner_phone: string
-  imagesData: WatchListFileData[]
+  imagesData: WatchListImageData[]
   filesData: WatchListFileData[]
   active_status: number
 };
@@ -96,7 +98,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
   const [personTypesOptions, setPersonTypesOptions] = useState<{ label: string ,value: number }[]>([]);
   
   // Data
-  const [imageImportDataList, setImageImportDataList] = useState<WatchListFileData[]>([]);
+  const [imageImportDataList, setImageImportDataList] = useState<WatchListImageData[]>([]);
   const [fileImportDataList, setFileImportDataList] = useState<WatchListFileData[]>([]);
 
   const bc = new BroadcastChannel("suspectPeopleChannel");
@@ -117,9 +119,9 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
     lastname: "",
     id_card_number: "",
     address: "",
-    province_id: 0,
-    district_id: 0,
-    subdistrict_id: 0,
+    province_code: "",
+    district_code: "",
+    subdistrict_code: "",
     zipcode: "",
     person_class_id: 0,
     case_number: "",
@@ -150,9 +152,9 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         lastname: selectedRow.lastname,
         id_card_number: selectedRow.idcard_number ? formatThaiID(selectedRow.idcard_number) : "",
         address: selectedRow.address,
-        province_id: selectedRow.province_id,
-        district_id: selectedRow.district_id,
-        subdistrict_id: selectedRow.subdistrict_id,
+        province_code: selectedRow.province_code,
+        district_code: selectedRow.district_code,
+        subdistrict_code: selectedRow.subdistrict_code,
         zipcode: selectedRow.zipcode,
         person_class_id: selectedRow.person_class_id,
         case_number: selectedRow.case_number,
@@ -163,16 +165,16 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         case_owner_phone: selectedRow.case_owner_phone,
         imagesData: selectedRow.watchlist_images,
         filesData: selectedRow.watchlist_files,
-        active_status: selectedRow.active,
+        active_status: selectedRow.active  ? 1 : 0,
       });
       setValue("prefix", selectedRow.title_id);
       setValue("firstname", selectedRow.firstname);
       setValue("lastname", selectedRow.lastname);
       setValue("id_card_number", selectedRow.idcard_number);
       setValue("address", selectedRow.address);
-      setValue("province", selectedRow.province_id);
-      setValue("district", selectedRow.district_id);
-      setValue("subDistrict", selectedRow.subdistrict_id);
+      setValue("province_code", selectedRow.province_code);
+      setValue("district_code", selectedRow.district_code);
+      setValue("subdistrict_code", selectedRow.subdistrict_code);
       setValue("zipcode", selectedRow.zipcode);
       setValue("personType", selectedRow.person_class_id);
       setValue("behavior", selectedRow.behavior);
@@ -191,9 +193,9 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         lastname: "",
         id_card_number: "",
         address: "",
-        province_id: 0,
-        district_id: 0,
-        subdistrict_id: 0,
+        province_code: "",
+        district_code: "",
+        subdistrict_code: "",
         zipcode: "",
         person_class_id: 0,
         case_number: "",
@@ -259,11 +261,11 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
 
   useEffect(() => {
     const fetchData = async () => {
-      if (formData.province_id) {
+      if (formData.province_code) {
         const res = await fetchClient<DistrictsResponse>(combineURL(CENTER_API, "/districts/get"), {
           method: "GET",
           queryParams: {
-            filter: `province_id=${formData.province_id}`,
+            filter: `province_code=${formData.province_code}`,
             limit: "60",
           },
         });
@@ -275,11 +277,11 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
           setDistrictOptions(options);
         }
       }
-      if (formData.district_id) {
+      if (formData.district_code) {
         const res = await fetchClient<SubDistrictsResponse>(combineURL(CENTER_API, "/subdistricts/get"), {
           method: "GET",
           queryParams: {
-            filter: `province_id=${formData.province_id},district_id=${formData.district_id}`,
+            filter: `province_code=${formData.province_code},district_code=${formData.district_code}`,
             limit: "60",
           },
         });
@@ -294,23 +296,38 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       }
     };
     fetchData();
-  }, [dispatch, formData.province_id, formData.district_id]);
+  }, [dispatch, formData.province_code, formData.district_code]);
 
   const handleCancelClick = async () => {
     if (imageImportDataList.length > 0) {
-      await deleteImportData(imageImportDataList);
+      await deleteImportImageData(imageImportDataList);
     }
     if (fileImportDataList.length > 0) {
-      await deleteImportData(fileImportDataList);
+      await deleteImportFileData(fileImportDataList);
     }
     onClose();
   };
 
-  const deleteImportData = async (list: WatchListFileData[]) => {
+  const deleteImportFileData = async (list: WatchListFileData[]) => {
     await Promise.all(
       list.map(async (data) => {
         const body = JSON.stringify({
-          urls: [data.url]
+          urls: [data.file_url]
+        })
+
+        await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, `/upload/remove`), {
+          method: "POST",
+          body,
+        })
+      })
+    )
+  }
+
+  const deleteImportImageData = async (list: WatchListImageData[]) => {
+    await Promise.all(
+      list.map(async (data) => {
+        const body = JSON.stringify({
+          urls: [data.image_url]
         })
 
         await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, `/upload/remove`), {
@@ -331,12 +348,12 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
   ) => {
     event.preventDefault();
     if (value) {
-      handleDropdownChange("province_id", value.value);
+      handleDropdownChange("province_code", value.value);
     }
     else {
-      handleDropdownChange("province_id", '');
-      handleDropdownChange("district_id", '');
-      handleDropdownChange("subdistrict_id", '');
+      handleDropdownChange("province_code", '');
+      handleDropdownChange("district_code", '');
+      handleDropdownChange("subdistrict_code", '');
     }
   };
 
@@ -346,11 +363,11 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
   ) => {
     event.preventDefault();
     if (value) {
-      handleDropdownChange("district_id", value.value);
+      handleDropdownChange("district_code", value.value);
     }
     else {
-      handleDropdownChange("district_id", '');
-      handleDropdownChange("subdistrict_id", '');
+      handleDropdownChange("district_code", '');
+      handleDropdownChange("subdistrict_code", '');
     }
   };
 
@@ -360,11 +377,11 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
   ) => {
     event.preventDefault();
     if (value) {
-      handleDropdownChange("subdistrict_id", value.value);
+      handleDropdownChange("subdistrict_code", value.value);
       handleTextChange("zipcode", value.zipcode)
     }
     else {
-      handleDropdownChange("subdistrict_id", '');
+      handleDropdownChange("subdistrict_code", '');
     }
   };
 
@@ -459,7 +476,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         formData.append("files", file)
       })
 
-      const response = await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, "/upload/"), {
+      const response = await fetchClient<WatchListImageResponse>(combineURL(CENTER_API, "/upload/"), {
         method: "POST",
         isFormData: true,
         body: formData,
@@ -562,13 +579,13 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
           data.address && { address: data.address }
         ),
         ...(
-          data.province && { province_id: getId(data.province) }
+          data.province && { province_code: getId(data.province) }
         ),
         ...(
-          data.district && { district_id: getId(data.district) }
+          data.district && { district_code: getId(data.district) }
         ),
         ...(
-          data.subDistrict && { subdistrict_id: getId(data.subDistrict) }
+          data.subDistrict && { subdistrict_code: getId(data.subDistrict) }
         ),
         ...(
           data.zipcode && { zipcode: data.zipcode }
@@ -597,10 +614,10 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         if (formData.imagesData && Object.keys(formData.imagesData).length > 0) {
           const body = JSON.stringify({
             watchlist_id: response.data.id,
-            url: formData.imagesData[0].url,
+            image_url: formData.imagesData[0].image_url,
             title: formData.imagesData[0].title
           });
-          await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, "/watchlist-images/create"), {
+          await fetchClient<WatchListImageResponse>(combineURL(CENTER_API, "/watchlist-images/create"), {
             method: "POST",
             headers: {
               'Content-Type': 'application/json'
@@ -614,7 +631,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
             formData.filesData.map(async (file) => {
               const body = JSON.stringify({
                 watchlist_id: response.data.id,
-                url: file.url,
+                file_url: file.file_url,
                 title: file.title
               });
               await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, "/watchlist-files/create"), {
@@ -628,14 +645,14 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
           )
         }
 
-        const unusedImages = imageImportDataList.filter((image) => !formData.imagesData.find((img) => img.url === image.url));
+        const unusedImages = imageImportDataList.filter((image) => !formData.imagesData.find((img) => img.image_url === image.image_url));
         if (unusedImages.length > 0) {
-          await deleteImportData(unusedImages);
+          await deleteImportImageData(unusedImages);
         }
 
-        const unusedFiles = fileImportDataList.filter((file) => !formData.filesData.find((f) => f.url === file.url));
+        const unusedFiles = fileImportDataList.filter((file) => !formData.filesData.find((f) => f.file_url === file.file_url));
         if (unusedFiles.length > 0) {
-          await deleteImportData(unusedFiles);
+          await deleteImportFileData(unusedFiles);
         }
         PopupMessage(t('message.success.save-success'), t('message.success.save-success-message'), "success");
         bc.postMessage("reload");
@@ -696,13 +713,13 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
           data.address !== selectedRow?.address && { address: data.address }
         ),
         ...(
-          getId(data.province) !== selectedRow?.province_id && { province_id: getId(data.province) }
+          getStringId(data.province) !== selectedRow?.province_code && { province_code: getStringId(data.province) }
         ),
         ...(
-          getId(data.district) !== selectedRow?.district_id && { district_id: getId(data.district) }
+          getStringId(data.district) !== selectedRow?.district_code && { district_code: getStringId(data.district) }
         ),
         ...(
-          getId(data.subDistrict) !== selectedRow?.subdistrict_id && { subdistrict_id: getId(data.subDistrict) }
+          getStringId(data.subDistrict) !== selectedRow?.subdistrict_code && { subdistrict_code: getStringId(data.subDistrict) }
         ),
         ...(
           data.zipcode !== selectedRow?.zipcode && { zipcode: data.zipcode }
@@ -828,14 +845,15 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
   }
 
   const isDataChanged = () => {
-    const isOnlyStatusChanged = formData.active_status !== selectedRow?.active;
+    const status = selectedRow?.active ? 1 : 0;
+    const isOnlyStatusChanged = formData.active_status !== status;
 
-    const imageArray = getImagesArrayWithoutNulls(formData.imagesData).map((image) => image.url);
-    const oldImageArray = selectedRow?.watchlist_images?.map((image) => image.url) ?? [];
+    const imageArray = getImagesArrayWithoutNulls(formData.imagesData).map((image) => image.image_url);
+    const oldImageArray = selectedRow?.watchlist_images?.map((image) => image.image_url) ?? [];
     const isImageChanged = JSON.stringify(imageArray) !== JSON.stringify(oldImageArray);
 
-    const fileArray = getImagesArrayWithoutNulls(formData.filesData).map((file) => file.url);
-    const oldFileArray = selectedRow?.watchlist_files?.map((file) => file.url) ?? [];
+    const fileArray = getFilesArrayWithoutNulls(formData.filesData).map((file) => file.file_url);
+    const oldFileArray = selectedRow?.watchlist_files?.map((file) => file.file_url) ?? [];
     const isFileChanged = JSON.stringify(fileArray) !== JSON.stringify(oldFileArray);
 
     const arrestDate = formData.arrest_warrant_date ? dayjs(formData.arrest_warrant_date).format("YYYY-MM-DD") : null;
@@ -849,9 +867,9 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       formData.lastname !== selectedRow?.lastname ||
       idCardNumber !== selectedRow?.idcard_number ||
       formData.address !== selectedRow?.address ||
-      getId(formData.province_id) !== selectedRow?.province_id ||
-      getId(formData.district_id) !== selectedRow?.district_id ||
-      getId(formData.subdistrict_id) !== selectedRow?.subdistrict_id ||
+      getStringId(formData.province_code) !== selectedRow?.province_code ||
+      getStringId(formData.district_code) !== selectedRow?.district_code ||
+      getStringId(formData.subdistrict_code) !== selectedRow?.subdistrict_code ||
       formData.zipcode !== selectedRow?.zipcode ||
       getId(formData.person_class_id) !== selectedRow?.person_class_id ||
       formData.case_number !== selectedRow?.case_number ||
@@ -871,6 +889,25 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
   }
 
   const convertImagesToArray = (imagesObj: {
+    [key: number]: WatchListImageData | null
+  }): (WatchListImageData | null)[] => {
+    const maxIndex = Math.max(...Object.keys(imagesObj).map(Number), -1)
+
+    // Create array of that length + 1
+    return Array.from({ length: maxIndex + 1 }, (_, index) => {
+      return imagesObj[index] || null
+    })
+  }
+
+  const getImagesArrayWithoutNulls = (imagesObj: {
+    [key: number]: WatchListImageData | null
+  }): WatchListImageData[] => {
+    return convertImagesToArray(imagesObj).filter(
+      (img): img is WatchListImageData => img !== null
+    )
+  }
+
+  const convertFilesToArray = (imagesObj: {
     [key: number]: WatchListFileData | null
   }): (WatchListFileData | null)[] => {
     const maxIndex = Math.max(...Object.keys(imagesObj).map(Number), -1)
@@ -881,10 +918,10 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
     })
   }
 
-  const getImagesArrayWithoutNulls = (imagesObj: {
+  const getFilesArrayWithoutNulls = (imagesObj: {
     [key: number]: WatchListFileData | null
   }): WatchListFileData[] => {
-    return convertImagesToArray(imagesObj).filter(
+    return convertFilesToArray(imagesObj).filter(
       (img): img is WatchListFileData => img !== null
     )
   }
@@ -898,9 +935,9 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       lastname: "",
       id_card_number: "",
       address: "",
-      province_id: 0,
-      district_id: 0,
-      subdistrict_id: 0,
+      province_code: "",
+      district_code: "",
+      subdistrict_code: "",
       zipcode: "",
       person_class_id: 0,
       case_number: "",
@@ -1029,7 +1066,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
               <AutoComplete 
                 id="province-select"
                 sx={{ marginTop: "5px"}}
-                value={formData.province_id}
+                value={formData.province_code}
                 onChange={handleProvinceChange}
                 options={provinceOptions}
                 label={t("component.province")}
@@ -1044,7 +1081,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
               <AutoComplete 
                 id="district-select"
                 sx={{ marginTop: "5px"}}
-                value={formData.district_id}
+                value={formData.district_code}
                 onChange={handleDistrictChange}
                 options={districtOptions}
                 label={t("component.district")}
@@ -1059,7 +1096,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
               <AutoComplete 
                 id="subdistrict-select"
                 sx={{ marginTop: "5px"}}
-                value={formData.subdistrict_id}
+                value={formData.subdistrict_code}
                 onChange={handleSubDistrictChange}
                 options={subDistrictOptions}
                 label={t("component.sub-district")}
@@ -1311,11 +1348,11 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
                   <label
                     className="relative flex items-center justify-center w-full h-[250px] mt-[5px] bg-[#48494B] cursor-pointer overflow-hidden hover:bg-gray-800"
                   >
-                    { formData.imagesData.length > 0 && formData.imagesData[0]?.url ? (
+                    { formData.imagesData.length > 0 && formData.imagesData[0]?.image_url ? (
                       <div className="relative w-full h-full">
                         <div className="absolute inset-0">
                           <img
-                            src={`${CENTER_FILE_URL}${formData.imagesData[0].url}`}
+                            src={`${CENTER_FILE_URL}${formData.imagesData[0].image_url}`}
                             alt="Uploaded 1"
                             className="object-contain w-full h-full"
                           />
@@ -1398,7 +1435,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
                             }`}
                           >
                             <td className="font-medium text-center">
-                              {getFileName(file.title, file.url)}
+                              {getFileName(file.title, file.file_url)}
                             </td>
                             <td className="font-medium text-center">
                               {dayjs(new Date(file.created_at)).format('DD/MM/YYYY (hh:mm)')}

@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useForm } from "react-hook-form";
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import { useSelector } from "react-redux"
@@ -36,17 +35,24 @@ import FeedImages from '../../components/feed-images/FeedImages';
 import {
   Camera,
   CameraResponse,
-  SpecialPlate,
   NotificationList,
-  SuspectPeople,
   RealTimeLprData,
+  RealTimeFaceData,
 } from "../../features/types";
 
 // Images
 import PinGoogleMap from "../../assets/icons/pin_google-maps.png";
 
 // Utils
-import { reformatString, getPlateTypeColor, getPersonTypeColor, formatNumber } from "../../utils/commonFunction";
+import { 
+  reformatString, 
+  getPlateTypeColor, 
+  formatNumber, 
+  checkSpecialPlate,
+  checkSpecialPerson,
+  getPlateClassName,
+  getPersonTypeColor
+} from "../../utils/commonFunction";
 import { fetchClient, combineURL } from "../../utils/fetchClient";
 import { PopupMessage } from '../../utils/popupMessage';
 
@@ -67,10 +73,11 @@ import {
   updateToastMessage,
 } from '../../features/realtime-data/realtimeDataSlice';
 import {
-  setCheckpointSelected
+  setCameraSelected
 } from '../../features/vehicle-count/VehicleCountSlice';
-
-import { mockCameras } from "../../mocks/mockCameraSettings";
+import {
+  fetchVehicleCountThunk
+} from "../../features/vehicle-count/VehicleCountSlice";
 
 dayjs.extend(buddhistEra);
 dayjs.extend(utc);
@@ -119,10 +126,6 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
   const sliceSuspectPeople = useSelector((state: RootState) => state.suspectPeopleData)
   const { realtimeData } = useSelector((state: RootState) => state.realTimeData)
   const { vehicleCount } = useSelector((state: RootState) => state.vehicleCountData)
-
-  const {
-    handleSubmit,
-  } = useForm();
   
   const {
     searchSpecialCheckpoint,
@@ -151,7 +154,6 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
       if (prevCameraIds.length === 0 && hasAll) {
         setPrevCameraIds(cameraList);
       }
-      dispatch(fetchVehicleCountThunk({ cameraUids: cameraList.join(",") }));
     }
   }, [selectedCameraObjects, cameraList])
 
@@ -252,7 +254,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
         method: "GET",
         queryParams: {
           filter: `deleted=false`,
-          limit: "5000",
+          limit: "1000",
         },
       });
 
@@ -267,18 +269,20 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
   };
 
   const showToastsAndMapPin = async () => {
-    if (!isSearchClicked) return; 
+    if (!isSearchClicked) return;
 
     for (const data of toastNotification) {
-      const uniqueKey = `${data.plate}-${data.epoch_end}`;
+      const isLpr = data.detect_type === "lpr" || !data.detect_type;
+      const isFace = data.detect_type === "face";
+
+      const identifier = isLpr ? (data as RealTimeLprData).plate : (data as RealTimeFaceData).first_name;
+      const uniqueKey = `${data.detect_type}-${identifier}-${data.epoch_end}`;
 
       if (shownToastsRef.current.includes(uniqueKey)) continue;
 
-      // Match camera
       const cameraMatched = selectedCameraIds.find(
         (camera) => camera.uid === data.camera_uid
       );
-
       if (!cameraMatched) continue;
 
       shownToastsRef.current.unshift(uniqueKey);
@@ -297,7 +301,8 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
         i18n.language === "th" ? "DD-MM-BBBB HH:mm:ss" : "DD-MM-YYYY HH:mm:ss"
       );
 
-      // Update notification list
+      const isBlacklist = isLpr ? (data as RealTimeLprData).plate_class_name.toLowerCase() === "blacklist" : (data as RealTimeFaceData).person_class_name.toLowerCase() === "blacklist"
+
       setNotificationList((prev) => {
         const newMap = new Map(prev);
         const key = data.camera_uid;
@@ -309,14 +314,14 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
             id: data.id,
             camera_uid: data.camera_uid,
             camera_name: updatedData.camera_name,
-            plate_number: data.plate_number,
-            plate_prefix: data.plate_prefix,
-            region_code: data.region_code,
+            plate_number: isLpr ? (data as RealTimeLprData).plate_number : "",
+            plate_prefix: isLpr ? (data as RealTimeLprData).plate_prefix : "",
+            region_code: isLpr ? (data as RealTimeLprData).region_code : "",
             iconColor: data.color,
             bgColor: data.pin_background_color,
             textShadow: data.text_shadow,
             isLocationWithLabel: true,
-            isSpecialLocation: true,
+            isSpecialLocation: isBlacklist,
             detectTime: newEpochEnd,
             camera_latitude: updatedData.camera_latitude,
             camera_longitude: updatedData.camera_longitude,
@@ -325,7 +330,6 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
         return newMap;
       });
 
-      // Show toast
       toast(
         ({ closeToast, ...toastProps }) => (
           <RealTimeToastify
@@ -335,20 +339,18 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
             alertData={updatedData}
             type={data.detect_type}
             onDelete={() => {
+              // Remove from Map Pins
               setNotificationList((prev) => {
                 const newMap = new Map(prev);
                 newMap.forEach((list, key) => {
-                  const filtered = list.filter(
-                    (item) => item.id !== updatedData.id
-                  );
+                  const filtered = list.filter((item) => item.id !== updatedData.id);
                   if (filtered.length > 0) newMap.set(key, filtered);
                   else newMap.delete(key);
                 });
                 return newMap;
               });
-              const newData = toastNotification.filter(
-                (item) => item.id !== updatedData.id
-              );
+              // Remove from Redux
+              const newData = toastNotification.filter((item) => item.id !== updatedData.id);
               dispatch(updateToastMessage(newData));
               closeToast();
             }}
@@ -371,33 +373,33 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
   };
 
   const drawBaseMapPins = async (cameras: Camera[]) => {
-      // Clear previous checkpoints first
-      clearSearchPlaces();
-      
-      const data = cameras.map((camera) => {
-          const iconColor = "#FDCC0A"; // Default color
-          const isLocationWithLabel = true;
-          const isSpecialLocation = false;
+    // Clear previous checkpoints first
+    clearSearchPlaces();
+    
+    const data = cameras.map((camera) => {
+      const iconColor = "#FDCC0A"; // Default color
+      const isLocationWithLabel = true;
+      const isSpecialLocation = false;
 
-          return {
-              id: camera.id,
-              camera_uid: camera.uid,
-              camera_name: camera.camera_name,
-              plate_number: "",
-              plate_prefix: "",
-              region_code: "",
-              iconColor,
-              bgColor: iconColor,
-              textShadow: "",
-              isLocationWithLabel,
-              isSpecialLocation,
-              detectTime: "",
-              camera_latitude: camera.latitude,
-              camera_longitude: camera.longitude,
-          }
-      })
-      
-      await searchSpecialCheckpoint(data);
+      return {
+        id: camera.id,
+        camera_uid: camera.uid,
+        camera_name: camera.camera_name,
+        plate_number: "",
+        plate_prefix: "",
+        region_code: "",
+        iconColor,
+        bgColor: iconColor,
+        textShadow: "",
+        isLocationWithLabel,
+        isSpecialLocation,
+        detectTime: "",
+        camera_latitude: camera.latitude,
+        camera_longitude: camera.longitude,
+      }
+    })
+    
+    await searchSpecialCheckpoint(data);
   }
 
   const handleCameraChange = (ids: string[]) => {
@@ -416,7 +418,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
     setSelectedCameraIds(hasAll ? cameraList : cameraList.filter(c => newIds.includes(c.uid)));
 
     if (isSearchClicked) {
-        setIsSearchClicked(false);
+      setIsSearchClicked(false);
     }
   };
 
@@ -425,99 +427,96 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
 
     setIsSearchClicked(true); 
     
-    dispatch(setCheckpointSelected(selectedCameraIds.map((c) => c.uid)));
+    const cameraUidList = selectedCameraIds.map((c) => c.uid);
+    dispatch(setCameraSelected(cameraUidList));
     setPrevCameraIds(selectedCameraIds);
+    await dispatch(fetchVehicleCountThunk({ cameraUids: cameraUidList.join(",") }));
 
     await drawBaseMapPins(selectedCameraIds);
   }
 
-  const handleSearch = async () => {
-    if (selectedCameraIds.length === 0) {
-      clearSearchPlaces();
-      dispatch(setCheckpointSelected([]));
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    await executeSearch(selectedCameraIds);
+  };
+
+  const executeSearch = useCallback(async (cameraData: Camera[]) => {
+    if (cameraData.length === 0) {
+      await clearSearchPlaces();
+      dispatch(setCameraSelected(cameraList.map((c) => c.uid)));
       setPrevCameraIds([]);
-      if (cameraList.length > 0) {
-        setSelectedCameraObjects([{ label: t('dropdown.all'), value: "0" }]);
-      }
+      setSelectedCameraObjects([{ label: t('dropdown.all'), value: "0" }]);
+      setIsSearchClicked(false);
+      await dispatch(fetchVehicleCountThunk({ cameraUids: cameraList.map(c => c.uid).join(",") }));
       return;
     }
-    
-    setIsSearchClicked(true);
-    
-    const removedIds = prevCameraIds.filter(id => !selectedCameraIds.some(c => c.uid === id.uid));
 
-    if (removedIds.length > 0) {
-      removedIds.forEach(camera => {
-        const removedCheckpoint = cameraList.find(cp => cp.uid === camera.uid);
-        if (removedCheckpoint) {
-          const location = {
-            lat: parseFloat(removedCheckpoint.latitude),
-            lng: parseFloat(removedCheckpoint.longitude),
-          };
-          clearPlaceMarkerWithLocation(location);
-        }
+    setIsSearchClicked(true);
+
+    const removedIds = prevCameraIds.filter(
+      (prev) => !cameraData.some((curr) => curr.uid === prev.uid)
+    );
+
+    for (const camera of removedIds) {
+      clearPlaceMarkerWithLocation({
+        lat: parseFloat(camera.latitude),
+        lng: parseFloat(camera.longitude),
       });
     }
 
-    dispatch(setCheckpointSelected(selectedCameraIds.map((c) => c.uid)));
-    setPrevCameraIds(selectedCameraIds);
+    dispatch(setCameraSelected(cameraData.map((c) => c.uid)));
+    setPrevCameraIds(cameraData);
 
-    await drawBaseMapPins(selectedCameraIds);
-  };
+    // Refresh Map Pins
+    await drawBaseMapPins(cameraData);
+    await dispatch(fetchVehicleCountThunk({ cameraUids: cameraData.map(c => c.uid).join(",") }));
+  }, [dispatch, prevCameraIds, clearSearchPlaces, clearPlaceMarkerWithLocation, t]);
 
   const handleClearSearch = async () => {
     setSelectedCameraObjects([{ label: t('dropdown.all'), value: "0" }]);
     clearSearchPlaces();
     setIsSearchClicked(false); 
     setPrevCameraIds([]);
-    dispatch(setCheckpointSelected([]));
+    dispatch(setCameraSelected(cameraList.map((c) => c.uid)));
   };
 
   const handleMapLoad = useCallback((mapInstance: LeafletMap | null) => {
     setMap(mapInstance)
   }, []);
 
-  const handleCamerasSelected = (cameraSelected: {value: any, label: string}[]) => {
-    setSelectedCameraObjects(cameraSelected);
-    
-    let newIds: string[];
-    if (cameraSelected.length === 0 || cameraSelected.some(c => c.value === "0")) {
-      newIds = ["0"];
-    } else {
-      newIds = cameraSelected.map(c => c.value);
-    }
-    
-    const hasAll = cameraSelected.some((v) => v.value === "0");
-    const updatedSelectedCameraIds = hasAll ? cameraList : cameraList.filter(c => newIds.includes(c.uid));
-    
-    setSelectedCameraIds(updatedSelectedCameraIds); 
+  const handleCamerasSelected = useCallback(async (cameraSelected: { value: any, label: string }[]) => {
+    const syncSelectedObjects = camerasOption.filter(option => 
+      cameraSelected.some(selected => selected.value === option.value)
+    );
 
-    if (updatedSelectedCameraIds.length > 0) {
-      setTimeout(() => handleSearch(), 0); 
+    const hasAll = syncSelectedObjects.some((v) => v.value === "0");
+
+    if (hasAll || syncSelectedObjects.length === 0) {
+      const allObj = camerasOption.find(o => o.value === "0") || { label: t('dropdown.all'), value: "0" };
+      setSelectedCameraObjects([allObj]);
+      setSelectedCameraIds(cameraList);
+      await executeSearch(cameraList);
     } 
     else {
-      handleSearch();
+      setSelectedCameraObjects(syncSelectedObjects);
+      
+      const filtered = cameraList.filter((c) => 
+          syncSelectedObjects.some((sc) => sc.value === c.uid)
+      );
+      setSelectedCameraIds(filtered);
+      await executeSearch(filtered);
     }
-  };
+  }, [camerasOption, cameraList, t, executeSearch]);
 
   const getProvinceName = (regionCode: string) => {
     const province = sliceDropdown.regions?.data.find(region => region.region_code === regionCode);
     return province?.name_th || "";
   }
 
-  const checkSpecialPlate = (platePrefix: string, plateNumber: string, region: string): SpecialPlate | undefined => {
-    const specialPlate = sliceSpecialPlate.specialPlates?.data.find(sp => sp.plate_prefix === platePrefix && sp.plate_number === plateNumber && sp.region_code === region);
-    return specialPlate
-  };
-
-  const checkSpecialPerson = (prefixId: number, firstName: string, lastName: string): SuspectPeople | undefined => {
-    const suspectPerson = sliceSuspectPeople.suspectPeople?.data.find(sp => sp.title_id === prefixId && sp.firstname === firstName && sp.lastname === lastName);
-    return suspectPerson
-  };
-
   const createFeedVehicleInfo = (data: RealTimeLprData, index: number) => {
-    const specialPlateData = checkSpecialPlate(data.plate_prefix, data.plate_number, data.region_code);
-    const { color, feedBackgroundColor  } = getPlateTypeColor(specialPlateData ? specialPlateData.plate_class_id : 0);
+    const specialPlateData = checkSpecialPlate(data.special_plate_uid, sliceSpecialPlate.specialPlates);
+    const specialPlateName = getPlateClassName(specialPlateData ? specialPlateData.plate_class_id : 0, sliceDropdown.plateTypes);
+    const { color, feedBackgroundColor  } = getPlateTypeColor(specialPlateName);
     const provinceName = getProvinceName(data.region_code);
     
     const vehicleColor = sliceDropdown.vehicleColors?.data.find(color => color.color === data.vehicle_color);
@@ -533,57 +532,61 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
     }
     return (
       <FeedCard id={data.id} index={index}>
-        <div className='grid grid-cols-[55%_45%]'>
-          <p
-            className="text-center"
-            style={{ backgroundColor: feedBackgroundColor, color }}
-          >
-            {`${data.plate}${provinceName && ` ${provinceName}`}`}
-          </p>
+        <p
+          className="text-center"
+          style={{ backgroundColor: feedBackgroundColor, color }}
+        >
+          {`${data.plate}${provinceName && ` ${provinceName}`}`}
+        </p>
 
-          <p className='bg-[#383A39] text-center'>
-            {dayjs(data.epoch_end).format(i18n.language === 'th' ? 'DD-MM-BBBB HH:mm:ss' : 'DD-MM-YYYY HH:mm:ss')} | <span className='font-bold'>{`${data.plate_confidence}%`}</span>
-          </p>
+        <p className='bg-[#383A39] text-center'>
+          {dayjs(data.epoch_end).format(i18n.language === 'th' ? 'DD-MM-BBBB HH:mm:ss' : 'DD-MM-YYYY HH:mm:ss')} | <span className='font-bold'>{`${data.plate_confidence}%`}</span>
+        </p>
 
-          {/* Checkpoint */}
-          <div className='pl-[30px] col-span-2'>{`${t('text.checkpoint')}: ${cameraList.find(cp => cp.uid === data.camera_uid)?.camera_name || "-"}`}</div>
+        {/* Checkpoint */}
+        <div className='pl-[30px] col-span-2'>{`${t('text.checkpoint')}: ${cameraList.find(cp => cp.uid === data.camera_uid)?.camera_name || "-"}`}</div>
 
-          {/* Images */}
-          <FeedImages data={data} />
+        {/* Images */}
+        <FeedImages 
+          image1={data.vehicle_image_url}
+          image1Alt={"Vehicle Image"}
+          image2={data.plate_image_url}
+          image2Alt={"Plate Image"}
+        />
 
-          {/* Vehicle Info */}
-          <div className="w-full h-full bg-[#161817]">
-            <div className="h-full flex flex-col p-1 pl-3 space-y-2">
-              {
-                [
-                  { label: t('feed-data.type'), value: data.vehicle_body_type },
-                  { label: t('feed-data.brand'), value: data.vehicle_make },
-                  { label: t('feed-data.color'), value: newVehicleColor },
-                  { label: t('feed-data.model'), value: data.vehicle_model },
-                ].map(({ label, value }, idx) => (
-                  <div className="flex" key={idx}>
-                    <span className="w-[55px] text-left">{label}</span>
-                    <span className="mx-1">:</span>
-                    <span className="w-[135px] truncate" title={reformatString(value)}>
-                      {reformatString(value)}
-                    </span>
-                  </div>
-                ))
-              }
-            </div>
+        {/* Vehicle Info */}
+        <div className="w-full h-full bg-[#161817]">
+          <div className="h-full flex flex-col p-1 pl-3 space-y-2">
+            {
+              [
+                { label: t('feed-data.type'), value: data.vehicle_body_type },
+                { label: t('feed-data.brand'), value: data.vehicle_make },
+                { label: t('feed-data.color'), value: newVehicleColor },
+                { label: t('feed-data.model'), value: data.vehicle_model },
+              ].map(({ label, value }, idx) => (
+                <div className="flex" key={idx}>
+                  <span className="w-[55px] text-left">{label}</span>
+                  <span className="mx-1">:</span>
+                  <span className="w-[135px] truncate" title={reformatString(value)}>
+                    {reformatString(value)}
+                  </span>
+                </div>
+              ))
+            }
           </div>
         </div>
       </FeedCard>
     )
   }
 
-  const createFeedFaceInfo = (data: RealTimeLprData, index: number) => {
-    const suspectPersonData = checkSpecialPerson(data.title_id, data.first_name, data.last_name);
+  const createFeedFaceInfo = (data: RealTimeFaceData, index: number) => {
+    const suspectPersonData = checkSpecialPerson(data.title_id, data.first_name, data.last_name, sliceSuspectPeople?.suspectPeople);
+    const specialPlateName = getPlateClassName(suspectPersonData ? suspectPersonData.person_class_id : 0, sliceDropdown.personTypes);
     const prefix = sliceDropdown.prefix?.data.find(prefix => prefix.id === data.title_id);
     const newPrefix = i18n.language === "th"
       ? prefix?.title_th || ""
       : prefix?.title_en || "";
-    const { color, backgroundColor  } = getPersonTypeColor(suspectPersonData ? suspectPersonData.person_class_id : 0);
+    const { color, backgroundColor } = getPersonTypeColor(specialPlateName);
     return (
       <FeedCard id={data.id} index={index}>
         <div className='grid grid-cols-[55%_45%]'>
@@ -595,14 +598,19 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
         </p>
 
           <p className='bg-[#383A39] text-center'>
-            {dayjs(data.epoch_end).format(i18n.language === 'th' ? 'DD-MM-BBBB HH:mm:ss' : 'DD-MM-YYYY HH:mm:ss')} | <span className='font-bold'>{`${data.plate_confidence}%`}</span>
+            {dayjs(data.epoch_end).format(i18n.language === 'th' ? 'DD-MM-BBBB HH:mm:ss' : 'DD-MM-YYYY HH:mm:ss')} | <span className='font-bold'>{`${data.face_confidence}%`}</span>
           </p>
 
           {/* Checkpoint */}
           <div className='pl-[30px] col-span-2'>{`${t('text.checkpoint')}: ${cameraList.find(cp => cp.uid === data.camera_uid)?.camera_name || "-"}`}</div>
 
           {/* Images */}
-          <FeedImages data={data} />
+          <FeedImages 
+            image1={data.detect_image_url}
+            image1Alt={"Detect Image"}
+            image2={data.upload_image_url}
+            image2Alt={"Upload Image"}
+          />
 
           {/* Behavior Info */}
           <div className="w-full h-full bg-[#161817]">
@@ -617,6 +625,11 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
     )
   }
 
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    handleSearch(e);
+  }
+
   return (
     <div id="real-time-monitor" className={`main-content ${isOpen ? "pl-[130px]" : "pl-2.5"} pr-2.5 transition-all duration-500`}>
       <div className='flex flex-col w-full h-full overflow-y-auto'>
@@ -625,7 +638,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
         
         {/* Search Filter Part */}
         <div className='flex lg:flex-row flex-col justify-between h-[100px] gap-2'>
-          <form onSubmit={handleSubmit(handleSearch)}>
+          <form onSubmit={onSubmit}>
             <div className='flex mt-3 w-full'>
               <div className='flex w-[60vw] space-x-3'>
                 <div className='flex flex-col w-full space-y-2'>
@@ -765,7 +778,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
                 containerId="realtime-toast"
                 position="bottom-left"
                 hideProgressBar
-                newestOnTop={false}
+                newestOnTop={true}
                 closeOnClick={false}
                 rtl={false}
                 pauseOnFocusLoss
@@ -794,27 +807,24 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
           <div className='h-[75.5vh] overflow-y-auto'>
             <AnimatePresence initial={false}>
               {
-                realtimeData.map((data, index) => {
-                  // Filter by the *previously* selected cameras (prevCameraIds which holds the *searched* cameras)
-                  if (prevCameraIds.every((camera) => camera.uid !== data.camera_uid)) return null;
-                  
-                  const isVehicle = data.detect_type === "vehicle";
-                  const isFace = data.detect_type === "face";
-                  if (DETAIL_INFORMATION?.FILTER_FACE_AND_LICENSE_PLATE) {
-                    if (isVehicle && isShowLicensePlate) {
-                      return createFeedVehicleInfo(data, index);
-                    }
-                    if (isFace && isShowFace) {
-                      return createFeedFaceInfo(data, index);
-                    }
-                    return null;
-                  }
+                realtimeData
+                  .filter((data) => {
+                    const isCameraMatched = prevCameraIds.some((cam) => cam.uid === data.camera_uid);
+                    if (!isCameraMatched) return false;
 
-                  if (isVehicle) return createFeedVehicleInfo(data, index);
-                  if (isFace) return createFeedFaceInfo(data, index);
+                    const isFaceMatch = data.detect_type === "face" && isShowFace;
+                    const isLprMatch = (data.detect_type === "lpr" || !data.detect_type) && isShowLicensePlate;
 
-                  return null;
-                })
+                    return isFaceMatch || isLprMatch;
+                  })
+                  .slice(0, 20) 
+                  .map((data, index) => {
+                    if (data.detect_type === "face" && isShowFace) {
+                      return createFeedFaceInfo((data as RealTimeFaceData), index)
+                    }
+                    
+                    return createFeedVehicleInfo((data as RealTimeLprData), index)
+                  })
               }
             </AnimatePresence>
           </div>
@@ -822,11 +832,15 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
       </div>
 
       {/* Dialog */}
-      <SearchCameras 
-        open={searchCheckpointsVisible}
-        selectedCameras={handleCamerasSelected}
-        onClose={() => setSearchCheckpointsVisible(false)}
-      />
+      {
+        searchCheckpointsVisible && (
+          <SearchCameras 
+            open={searchCheckpointsVisible}
+            selectedCameras={handleCamerasSelected}
+            onClose={() => setSearchCheckpointsVisible(false)}
+          />
+        )
+      }
     </div>
   )
 }

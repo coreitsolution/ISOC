@@ -9,7 +9,7 @@ import { RootState } from "../../app/store"
 import Image from '../image/Image';
 
 // Types
-import { RealTimeLprData } from '../../features/types';
+import { RealTimeLprData, RealTimeFaceData } from '../../features/types';
 
 // i18n
 import { useTranslation } from 'react-i18next';
@@ -22,7 +22,7 @@ interface CustomToastContentProps extends ToastContentProps {
   titleName: string;
   color: string;
   textShadow?: string;
-  alertData: RealTimeLprData | null;
+  alertData: RealTimeLprData | RealTimeFaceData | null;
   type?: string;
   onDelete?: () => void;
 }
@@ -45,9 +45,13 @@ const RealTimeToastify: React.FC<CustomToastContentProps> = ({
 
   // Data
   const [currentIndex, setCurrentIndex] = useState(0);
-  const imageList = [
-    `${CENTER_FILE_URL}${alertData.vehicle_image_url}`,
-    `${CENTER_FILE_URL}${alertData.plate_image_url}`,
+  const imageList = alertData.detect_type === "lpr" ? [
+    `${CENTER_FILE_URL}${(alertData as RealTimeLprData).vehicle_image_url}`,
+    `${CENTER_FILE_URL}${(alertData as RealTimeLprData).plate_image_url}`,
+  ] :
+  [
+    `${CENTER_FILE_URL}${(alertData as RealTimeFaceData).detect_image_url}`,
+    `${CENTER_FILE_URL}${(alertData as RealTimeFaceData).upload_image_url}`,
   ];
 
   const sliceDropdown = useSelector(
@@ -151,27 +155,27 @@ const RealTimeToastify: React.FC<CustomToastContentProps> = ({
             }}
           >
             {
-              type === "vehicle" ? (
+              type === "lpr" ? (
               (() => {
-                const province = sliceDropdown.regions?.data.find(region => region.region_code === alertData.region_code);
+                const province = sliceDropdown.regions?.data.find(region => region.region_code === (alertData as RealTimeLprData).region_code);
                 const newProvince = i18n.language === "th"
                   ? province?.name_th || "-"
                   : province?.name_en || "-";
                 return (
                   <>
-                    <p>{`${alertData.plate_prefix} ${alertData.plate_number}`}</p>
+                    <p>{`${(alertData as RealTimeLprData).plate_prefix} ${(alertData as RealTimeLprData).plate_number}`}</p>
                     <p>{`${newProvince && ` ${newProvince}`}`}</p>
                   </>
                 )
               })()) : (
                 (() => {
-                  const prefix = sliceDropdown.prefix?.data.find(prefix => prefix.id === alertData.title_id);
+                  const prefix = sliceDropdown.prefix?.data.find(prefix => prefix.id === (alertData as RealTimeFaceData).title_id);
                   const newPrefix = i18n.language === "th"
                     ? prefix?.title_th || ""
                     : prefix?.title_en || "";
                   return (
                     <>
-                      <p>{`${newPrefix}${alertData.first_name} ${alertData.last_name}`}</p>
+                      <p>{`${newPrefix}${(alertData as RealTimeFaceData).first_name} ${(alertData as RealTimeFaceData).last_name}`}</p>
                     </>
                   )
                 })()
@@ -190,7 +194,7 @@ const RealTimeToastify: React.FC<CustomToastContentProps> = ({
                   <span className="w-[60px] font-medium">{`${t('feed-data.type')}:`}</span>
                   {
                     (() => {
-                      const vehicleBodyTypes = sliceDropdown.vehicleBodyTypes?.data.find(type => type.body_type === alertData.vehicle_body_type);
+                      const vehicleBodyTypes = sliceDropdown.vehicleBodyTypes?.data.find(type => type.body_type === (alertData as RealTimeLprData).vehicle_body_type);
                       const newVehicleBodyTypes = i18n.language === "th"
                         ? vehicleBodyTypes?.body_type_th || "-"
                         : vehicleBodyTypes?.body_type_en || "-";
@@ -205,7 +209,7 @@ const RealTimeToastify: React.FC<CustomToastContentProps> = ({
                   <span className="w-[60px] font-medium">{`${t('feed-data.brand')}:`}</span>
                   {
                     (() => {
-                      const vehicleMake = sliceDropdown.vehicleMakes?.data.find(type => type.make === alertData.vehicle_make);
+                      const vehicleMake = sliceDropdown.vehicleMakes?.data.find(type => type.make === (alertData as RealTimeLprData).vehicle_make);
                       const newVehicleMake = i18n.language === "th"
                         ? vehicleMake?.make_th || "-"
                         : vehicleMake?.make_en || "-";
@@ -220,7 +224,7 @@ const RealTimeToastify: React.FC<CustomToastContentProps> = ({
                   <span className="w-[60px] font-medium">{`${t('feed-data.model')}:`}</span>
                   {
                     (() => {
-                      const vehicleModel = sliceDropdown.vehicleModel?.data.find(type => type.model === alertData.vehicle_model);
+                      const vehicleModel = sliceDropdown.vehicleModel?.data.find(type => type.model === (alertData as RealTimeLprData).vehicle_model);
                       const newVehicleModel = i18n.language === "th"
                         ? vehicleModel?.model_th || "-"
                         : vehicleModel?.model_en || "-";
@@ -235,7 +239,7 @@ const RealTimeToastify: React.FC<CustomToastContentProps> = ({
                   <span className="w-[60px] font-medium">{`${t('feed-data.color')}:`}</span>
                   {
                     (() => {
-                      const vehicleColor = sliceDropdown.vehicleColors?.data.find(type => type.color === alertData.vehicle_color);
+                      const vehicleColor = sliceDropdown.vehicleColors?.data.find(type => type.color === (alertData as RealTimeLprData).vehicle_color);
                       const newVehicleColor = i18n.language === "th"
                         ? vehicleColor?.color_th || "-"
                         : vehicleColor?.color_en || "-";
@@ -248,42 +252,42 @@ const RealTimeToastify: React.FC<CustomToastContentProps> = ({
                 </div>
                 <div className="flex">
                   <span className="w-20 font-medium">{`${t('feed-data.plate-group')}:`}</span>
-                  <span>{alertData.plate_class_name || "-"}</span>
+                  <span>{(alertData as RealTimeLprData).plate_class_name || "-"}</span>
                 </div>
                 <div className="flex">
                   <span className="w-[70px] font-medium">{`${t('feed-data.behavior')}:`}</span>
-                  <span>{alertData.special_plate_remark || "-"}</span>
+                  <span>{(alertData as RealTimeLprData).special_plate_remark || "-"}</span>
                 </div>
                 <div className="flex mb-6">
                   <span className="w-[70px] font-medium">{`${t('feed-data.checkpoint')}:`}</span>
-                  <span>{alertData.camera_name || "-"}</span>
+                  <span>{(alertData as RealTimeLprData).camera_name || "-"}</span>
                 </div>
                 <div className="flex">
                   <span className="w-20 font-medium">{`${t('feed-data.owner-name')}:`}</span>
-                  <span>{alertData.special_plate_owner_name || "-"}</span>
+                  <span>{(alertData as RealTimeLprData).special_plate_owner_name || "-"}</span>
                 </div>
               </>
             ) : (
               <>
                 <div className="flex">
                   <span className="w-20 font-medium">{`${t('feed-data.person-type')}:`}</span>
-                  <span>{alertData.person_class_name || "-"}</span>
+                  <span>{(alertData as RealTimeFaceData).person_class_name || "-"}</span>
                 </div>
                 <div className="flex">
                   <span className="w-[70px] font-medium">{`${t('feed-data.behavior')}:`}</span>
-                  <span>{alertData.special_person_remark || "-"}</span>
+                  <span>{(alertData as RealTimeFaceData).special_person_remark || "-"}</span>
                 </div>
                 <div className="flex mb-7">
                   <span className="w-[70px] font-medium">{`${t('feed-data.checkpoint')}:`}</span>
-                  <span>{alertData.camera_name || "-"}</span>
+                  <span>{(alertData as RealTimeFaceData).camera_name || "-"}</span>
                 </div>
                 <div className="flex">
                   <span className="w-20 font-medium">{`${t('feed-data.owner-name')}:`}</span>
-                  <span>{alertData.special_person_owner_name || "-"}</span>
+                  <span>{(alertData as RealTimeFaceData).special_person_owner_name || "-"}</span>
                 </div>
                 <div className="flex">
                   <span className="w-20 font-medium">{`${t('feed-data.phone')}:`}</span>
-                  <span>{alertData.special_person_owner_phone || "-"}</span>
+                  <span>{(alertData as RealTimeFaceData).special_person_owner_phone || "-"}</span>
                 </div>
               </>
             )

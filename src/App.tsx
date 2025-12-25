@@ -52,6 +52,7 @@ import {
   fetchVehicleBodyTypesThunk,
   fetchVehicleModelThunk,
   fetchCheckpointsThunk,
+  updateLicenseExpire,
 } from './features/dropdown/dropdownSlice';
 import {
   fetchSpecialPlatesThunk,
@@ -66,8 +67,12 @@ import {
 import { addListNotification, NotificationType, removeNotification } from "./features/notification/notificationSlice";
 import { triggerCameraRefresh, triggerRequestDeleteCamera } from "./features/refresh/refreshSlice";
 import {
-  fetchVehicleCountThunk
+  fetchVehicleCountThunk,
+  setCameraSelected,
 } from "./features/vehicle-count/VehicleCountSlice";
+import {
+  setMachineId
+} from "./features/license-verify/licenseVerifySlice";
 
 // Components
 import AuthListener from './components/auth-listener/AuthListener';
@@ -75,19 +80,29 @@ import UpdateAlertPopup from './components/update-alert-popup/UpdateAlertPopup';
 import RequestDeleteCameraAlert from './components/request-delete-camera-alert/RequestDeleteCameraAlert';
 import ProtectedRoute from './components/protected-route/ProtectedRoute';
 import CameraStatusPopup from './components/camera-status-popup/CameraStatusPopup';
+import Watermark from "./components/watermark/WaterMark";
+import LicenseExpirePopup from './components/license-expire-popup/LicenseExpirePopup';
 
 // Config
 import { getUrls } from './config/runtimeConfig';
 
 // utils
-import { getPlateTypeColor } from './utils/commonFunction'
+import { getPlateTypeColor, checkSpecialPlate, getPlateClassName } from './utils/commonFunction'
 import { toastChannel } from "./utils/channel";
 import { useSse } from "./utils/useSse";
 import { createNotificationToast } from "./utils/notification";
 import { fetchClient, combineURL } from "./utils/fetchClient";
+import { PopupMessage } from './utils/popupMessage';
 
 // Types
-import { SpecialPlate, EventNotifyResponse, EventNotify, Checkpoint } from "./features/types";
+import { 
+  EventNotifyResponse, 
+  EventNotify, 
+  Checkpoint, 
+  CameraResponse,
+  MachineIdResponse,
+  VerifyLicenseResponse,
+} from "./features/types";
 
 // i18n
 import { useTranslation } from "react-i18next";
@@ -98,14 +113,16 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
   const { CENTER_SERVER_SENT_EVENTS_URL, CENTER_SERVER_SENT_EVENTS_TOKEN, CENTER_API } = getUrls();
 
   // i18n
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const { authData } = useSelector((state: RootState) => state.auth);
-  const { checkpointSelected } = useSelector((state: RootState) => state.vehicleCountData);
+  const { cameraSelected } = useSelector((state: RootState) => state.vehicleCountData);
 
   const sliceSpecialPlate = useSelector((state: RootState) => state.specialPlateData);
   const sliceDropdown = useSelector((state: RootState) => state.dropdownData);
   
+  const enabled = Boolean(authData.token);
+
   toastChannel.onmessage = ({data}) => {
     const { id, toastId, messageId, action, data: updatedData } = data;
     if (action === "closeUpdateAlert" && toastId) {
@@ -119,7 +136,8 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
         theme: updatedData.theme,
         style: updatedData.style,
       });
-    } else if (action === "closeRequestDeleteCameraAlert" && id) {
+    } 
+    else if (action === "closeRequestDeleteCameraAlert" && id) {
       toast.update(toastId, {
         render: (props) => <RequestDeleteCameraAlert {...props} data={updatedData} />,
         autoClose: 3000,
@@ -152,6 +170,10 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     dispatch(clearError())
+    // handleLicenseExpire({
+    //   id: 1,
+    //   timestampUtc: new Date().toISOString(),
+    // });
     if (authData && !authData.token) {
       navigate('/login', { replace: true })
     }
@@ -234,7 +256,7 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
           limit: "1000"
         }
       ));
-      dispatch(fetchVehicleCountThunk());
+      fetchCameraData();
     }
   }, [dispatch, navigate, authData]);
 
@@ -247,6 +269,86 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
     };
     return () => bc.close();
   }, [dispatch]);
+
+  useEffect(() => {
+    if (enabled) {
+      fetchMachineId();
+    }
+  }, [sliceDropdown.checkpoints, enabled])
+
+  const fetchMachineId = async () => {
+    try {
+      const res = await fetchClient<MachineIdResponse>(combineURL(CENTER_API, "/checkpoints/machine-id"), {
+        method: "GET",
+      });
+
+      if (res.success) {
+        dispatch(setMachineId(res.machineId));
+        sliceDropdown?.checkpoints?.data.forEach(async (checkpoint) => {
+          await checkVerifyLicense(
+            checkpoint.uid,
+            res.machineId,
+            checkpoint.serial_number,
+            checkpoint.license_key
+          );
+        });
+      }
+    }
+    catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      PopupMessage(t('message.error.error-while-fetching-data'), errorMessage, "error");
+    }
+  }
+
+  const checkVerifyLicense = async (checkpointUid: string, machineId: string, serialNumber: string, licenseKey: string) => {
+    try {
+      const body = {
+        machineId: machineId,
+        serialNumber: serialNumber,
+        licenseKey: licenseKey,
+      };
+      const res = await fetchClient<VerifyLicenseResponse>(combineURL(CENTER_API, "/checkpoints/verify-license"), {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+
+      let isLicenseExpire = true;
+
+      if (res.success) {
+        isLicenseExpire = false;
+      }
+
+      dispatch(updateLicenseExpire({
+        checkpointUid: checkpointUid,
+        machineId: machineId,
+        isLicenseExpire: isLicenseExpire,
+      }));
+    }
+    catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      PopupMessage(t('message.error.error-while-fetching-data'), errorMessage, "error");
+    }
+  }
+
+  const fetchCameraData = async () => {
+    try {
+      const res = await fetchClient<CameraResponse>(combineURL(CENTER_API, "/cameras/get"), {
+        method: "GET",
+        queryParams: {
+          filter: `deleted=false`,
+          limit: "1000",
+        },
+      });
+
+      if (res.success) {
+        dispatch(setCameraSelected(res.data.length > 0 ? res.data.map((c) => c.uid) : []));
+      }
+    }
+    catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      PopupMessage(t('message.error.error-while-fetching-data'), errorMessage, "error");
+    }
+  };
 
   const createCameraNotification = async (cameraData: any) => {
     const isOnline = cameraData.current_status.toString().toLowerCase() === "online" ? true : false;
@@ -279,33 +381,38 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
   };
 
   const handleRealtimeMessage = async (message: any) => {   
-    dispatch(upsertRealtimeData(message));
-    dispatch(fetchVehicleCountThunk(checkpointSelected.length > 0 ?
+    dispatch(upsertRealtimeData({
+      ...message,
+      detect_type: "lpr",
+    }));
+    dispatch(fetchVehicleCountThunk(cameraSelected.length > 0 ?
       {
-        cameraUids: checkpointSelected.join(",")
+        cameraUids: cameraSelected.join(",")
       } : 
       undefined
     ));
 
-    const specialPlateData = await checkSpecialPlate(message.plate_prefix, message.plate_number, message.region_code);
-    
-    if (!specialPlateData) return;
+    if (!message.is_special_plate) return;
 
-    const specialPlateName = await getPlateClassName(specialPlateData.plate_class_id);
+    const specialPlateName = await getPlateClassName(message.special_plate_id, sliceDropdown.plateTypes);
+
+    const specialPlateData = await checkSpecialPlate(message.special_plate_uid, sliceSpecialPlate.specialPlates);
     
     const { backgroundColor, title, pinBackgroundColor, showAlert, textShadow } = await getPlateTypeColor(specialPlateName);
     
     if (!showAlert) return; 
 
+    const isBlacklist = specialPlateName.toLowerCase() === "blacklist";
+
     const updatedData = {
       ...message,
       plate_class_name: specialPlateName,
-      special_plate_remark: specialPlateData.behavior,
-      special_plate_owner_name: specialPlateData.case_owner_name,
-      special_plate_owner_agency: specialPlateData.case_owner_agency,
+      special_plate_remark: specialPlateData?.behavior || "-",
+      special_plate_owner_name: specialPlateData?.case_owner_name || "-",
+      special_plate_owner_agency: specialPlateData?.case_owner_agency || "-",
       title_name: title,
-      color: backgroundColor,
-      pin_background_color: pinBackgroundColor,
+      color: isBlacklist ? backgroundColor : "#FDCC0A",
+      pin_background_color: isBlacklist ? pinBackgroundColor : "#FDCC0A",
       text_shadow: textShadow,
     }
     dispatch(addToastMessage(updatedData));
@@ -366,14 +473,20 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  const checkSpecialPlate = (platePrefix: string, plateNumber: string, region: string): SpecialPlate | undefined => {
-    const specialPlate = sliceSpecialPlate.specialPlates?.data.find(sp => sp.plate_prefix === platePrefix && sp.plate_number === plateNumber && sp.region_code === region && sp.deleted === false && sp.active === true);
-    return specialPlate
-  };
-
-  const getPlateClassName = (classId: number) => {
-    const plateType = sliceDropdown.plateTypes?.data.find(type => type.id === classId);
-    return plateType?.title_en || "-";
+  const handleLicenseExpire = (message: any) => {
+    createNotificationToast({
+      dispatch,
+      type: "licenseExpire",
+      component: LicenseExpirePopup,
+      content: t("text.license-expire"),
+      messageId: message.timestampUtc,
+      style: {
+        minHeight: "130px",
+        maxHeight: "130px",
+      },
+      closeAction: "closeRequestDeleteCameraAlert",
+      id: message.id
+    });
   }
 
   const fetchNotification = async () => {
@@ -434,8 +547,6 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
       clearTimeout(timeoutId);
     }
   }
-
-  const enabled = Boolean(authData.token);
 
   useSse(
     CENTER_SERVER_SENT_EVENTS_URL,
@@ -509,10 +620,17 @@ function Layout() {
 function App() {
   const constraintsRef = useRef<HTMLDivElement>(null)
   const { authData } = useSelector((state: RootState) => state.auth);
+  const { checkpoints } = useSelector((state: RootState) => state.dropdownData);
   
+  // i18n
+  const { t } = useTranslation();
+
   return (
     <div ref={constraintsRef} className='min-h-screen min-w-screen'>
       <AuthListener />
+      {
+        (authData && checkpoints?.data.every(checkpoint => checkpoint.is_license_expire)) && <Watermark text={t("text.license-expire")} />
+      }
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route

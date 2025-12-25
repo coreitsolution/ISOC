@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Id } from 'react-toastify';
 
-export type NotificationType = "newCheckpoint" | "newCamera" | "requestDelete" | "cameraOnline" | "cameraOffline";
+export type NotificationType = "newCheckpoint" | "newCamera" | "requestDelete" | "cameraOnline" | "cameraOffline" | "licenseExpire";
 
 export interface NotificationData {
   id: number;

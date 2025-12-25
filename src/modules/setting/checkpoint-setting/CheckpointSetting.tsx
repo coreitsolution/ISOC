@@ -32,6 +32,7 @@ import AutoComplete from "../../../components/auto-complete/AutoComplete"
 
 // Icon
 import { Save } from "lucide-react"
+import WarningIcon from "../../../assets/icons/caution-mark.png"
 
 // Pop-up
 import { PopupMessage, PopupMessageWithCancel } from "../../../utils/popupMessage"
@@ -102,6 +103,9 @@ const CheckpointSetting: React.FC<CheckpointSettingProps> = ({
     prefix,
   } = useSelector((state: RootState) => state.dropdownData)
   const { authData } = useSelector((state: RootState) => state.auth);
+
+  // State
+  const [licenseExpired, setLicenseExpired] = useState(false);
 
   // Options
   const [provincesOptions, setProvincesOptions] = useState<{ label: string ,value: string }[]>([])
@@ -588,21 +592,35 @@ const CheckpointSetting: React.FC<CheckpointSettingProps> = ({
                       })}
                       error={!!errors.pcSerialNumber}
                     />
-                    <TextBox
-                      id="license"
-                      label={t('component.license')}
-                      placeholder={t('placeholder.license')}
-                      value={formData.license}
-                      onChange={(event) =>
-                        handleTextChange("license", event.target.value)
+                    <div 
+                      className="relative"
+                      onMouseEnter={() => setLicenseExpired(true)}
+                      onMouseLeave={() => setLicenseExpired(false)}
+                    >
+                      <TextBox
+                        id="license"
+                        label={t('component.license')}
+                        placeholder={t('placeholder.license')}
+                        value={formData.license}
+                        onChange={(event) =>
+                          handleTextChange("license", event.target.value)
+                        }
+                        sx={{ marginTop: "10px", fontSize: "15px" }}
+                        disabled={true}
+                        register={register("license", { 
+                          required: false,
+                        })}
+                        error={!!errors.license}
+                      />
+                      {
+                        checkpointData?.is_license_expire && (
+                          <div className={`absolute flex flex-col justify-center items-center bg-amber-50 inset-0 pointer-events-none ${licenseExpired ? "opacity-30" : "opacity-5"}`}>
+                            <img src={WarningIcon} alt="Warning" className="w-10 h-10" />
+                            <p className="text-black">{t("text.license-expire")}</p>
+                          </div>
+                        )
                       }
-                      sx={{ marginTop: "10px", fontSize: "15px" }}
-                      disabled={true}
-                      register={register("license", { 
-                        required: false,
-                      })}
-                      error={!!errors.license}
-                    />
+                    </div>
                   </div>
                 </div>
               </div>

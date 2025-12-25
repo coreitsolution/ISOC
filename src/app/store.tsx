@@ -7,6 +7,7 @@ import specialPlateReducer from "../features/special-plate/specialPlateSlice";
 import notificationReducer from "../features/notification/notificationSlice";
 import suspectPeopleReducer from "../features/suspect-people/suspectPeopleSlice";
 import vehicleCountReducer from "../features/vehicle-count/VehicleCountSlice";
+import licenseVerifyReducer from "../features/license-verify/licenseVerifySlice";
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     notification: notificationReducer,
     suspectPeopleData: suspectPeopleReducer,
     vehicleCountData: vehicleCountReducer,
+    licenseVerifyData: licenseVerifyReducer,
   },
 });
 

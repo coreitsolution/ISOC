@@ -13,14 +13,14 @@ import {
 
 interface VehicleCountState {
   vehicleCount: VehicleCountResponse | null;
-  checkpointSelected: string[];
+  cameraSelected: string[];
   vehicleCountStatus: Status;
   vehicleCountError: string | null;
 }
 
 const initialState: VehicleCountState = {
   vehicleCount: null,
-  checkpointSelected: [],
+  cameraSelected: [],
   vehicleCountStatus: Status.IDLE,
   vehicleCountError: null,
 }
@@ -37,8 +37,8 @@ const vehicleCountSlice = createSlice({
   name: "vehicleCount",
   initialState,
   reducers: {
-    setCheckpointSelected: (state, action: PayloadAction<string[]>) => {
-      state.checkpointSelected = action.payload;
+    setCameraSelected: (state, action: PayloadAction<string[]>) => {
+      state.cameraSelected = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -58,6 +58,6 @@ const vehicleCountSlice = createSlice({
   }
 })
 
-export const { setCheckpointSelected } = vehicleCountSlice.actions;
+export const { setCameraSelected } = vehicleCountSlice.actions;
 
 export default vehicleCountSlice.reducer

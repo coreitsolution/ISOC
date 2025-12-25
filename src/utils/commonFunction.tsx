@@ -4,7 +4,16 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 
 // Types
-import { Option } from '../features/types';
+import { 
+  Option,
+  SpecialPlate,
+  SpecialPlateResponse,
+  SuspectPeopleResponse,
+  SuspectPeople,
+} from '../features/types';
+import {
+  PlateTypesResponse
+} from "../features/dropdown/dropdownTypes"
 
 dayjs.extend(utc);
 
@@ -150,24 +159,24 @@ export const getPlateTypeColor = (typeName: string) => {
   return { color, backgroundColor, feedBackgroundColor, pinBackgroundColor, title, showAlert, textShadow }
 }
 
-export const getPersonTypeColor = (plateType: number | null) => {
+export const getPersonTypeColor = (typeName: string) => {
   let color = "white";
   let backgroundColor = "";
 
-  switch (plateType) {
-    case 3:
+  switch (typeName.toLowerCase()) {
+    case "member":
       color = "white";
       backgroundColor = "#0099ff";
       break;
-    case 4:
+    case "vip":
       color = "white";
       backgroundColor = "#009900";
       break;
-    case 6:
+    case "blacklist":
       color = "white";
       backgroundColor = "#E5252A";
       break;
-    case 7:
+    case "watchlist":
       color = "white";
       backgroundColor = "#FDCC0A";
       break;
@@ -298,3 +307,17 @@ export const getWeekday = (dateString: string, i18n: any) => {
   return i18n.language === "th" ? weekdaysTh[day] : weekdaysEng[day];
 };
 
+export const checkSpecialPlate = (uid: string, specialPlateList: SpecialPlateResponse | null): SpecialPlate | undefined => {
+  const specialPlate = specialPlateList?.data.find(sp => sp.uid === uid && sp.deleted === false && sp.active === true);
+  return specialPlate
+};
+
+export const checkSpecialPerson = (prefixId: number, firstName: string, lastName: string, suspectPeopleList: SuspectPeopleResponse | null): SuspectPeople | undefined => {
+  const suspectPerson = suspectPeopleList?.data.find(sp => sp.title_id === prefixId && sp.firstname === firstName && sp.lastname === lastName);
+  return suspectPerson
+};
+
+export const getPlateClassName = (classId: number, plateTypeList: PlateTypesResponse | null) => {
+  const plateType = plateTypeList?.data.find(type => type.id === classId);
+  return plateType?.title_en || "-";
+}

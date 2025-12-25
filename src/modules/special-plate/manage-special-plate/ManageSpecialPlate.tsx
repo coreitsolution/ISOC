@@ -25,6 +25,7 @@ import MultiSelectCheckpoints from '../../../components/multi-select/MultiSelect
 import {
   FileData,
   FileDataResponse,
+  ImageDataResponse,
   SpecialPlate,
   SpecialPlateResponse,
   SpecialPlateFilesResponse,
@@ -234,7 +235,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
-      const response = await fetchClient<FileDataResponse>(combineURL(CENTER_API, "/special-plate-images/get"), {
+      const response = await fetchClient<ImageDataResponse>(combineURL(CENTER_API, "/special-plate-images/get"), {
         method: "GET",
         signal: controller.signal,
         queryParams: {
@@ -245,7 +246,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
       if (response.success) {
         setFormData((prevData) => ({
           ...prevData,
-          imagesData: response.data
+          imagesData: response.data.map(data => ({...data, uid: data.image_uid}))
         }));
       }
     }
@@ -273,7 +274,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
       if (response.success) {
         setFormData((prevData) => ({
           ...prevData,
-          filesData: response.data
+          filesData: response.data.map(data => ({...data, uid: data.file_uid}))
         }));
       }
     }
@@ -622,7 +623,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
             imageArray.map(async (image) => {
               const body = JSON.stringify({
                 special_plate_uid: response.data.uid,
-                url: image.url,
+                image_url: image.url,
                 title: image.title
               });
               await fetchClient<SpecialPlateFilesResponse>(combineURL(CENTER_API, "/special-plate-images/create"), {
@@ -646,7 +647,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
             formData.filesData.map(async (file) => {
               const body = JSON.stringify({
                 special_plate_uid: response.data.uid,
-                url: file.url,
+                file_url: file.url,
                 title: file.title
               });
               await fetchClient<SpecialPlateFilesResponse>(combineURL(CENTER_API, "/special-plate-files/create"), {
@@ -791,7 +792,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
             added.map(async (image) => {
               const body = JSON.stringify({
                 special_plate_uid: selectedRow.uid,
-                url: image.url,
+                image_url: image.url,
                 title: image.title
               });
 
@@ -827,7 +828,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
             added.map(async (file) => {
               const body = JSON.stringify({
                 special_plate_uid: selectedRow.uid,
-                url: file.url,
+                file_url: file.url,
                 title: file.title
               });
 

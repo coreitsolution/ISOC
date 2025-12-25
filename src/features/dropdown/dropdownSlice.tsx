@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 
 // Constants
 import { Status } from "../../constants/statusEnum";
@@ -290,7 +290,17 @@ export const fetchStreamEncodesThunk = createAsyncThunk(
 const dropdownSlice = createSlice({
   name: "dropdown",
   initialState,
-  reducers: {},
+  reducers: {
+    updateLicenseExpire: (state, action: PayloadAction<{checkpointUid: string, machineId: string, isLicenseExpire: boolean}>) => {
+      const { machineId, isLicenseExpire } = action.payload;
+      state.checkpoints?.data.forEach((checkpoint) => {
+        if (checkpoint.uid === action.payload.checkpointUid) {
+          checkpoint.machine_id = machineId;
+          checkpoint.is_license_expire = isLicenseExpire;
+        }
+      });
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchCheckpointsThunk.pending, (state) => {
@@ -581,4 +591,5 @@ const dropdownSlice = createSlice({
   }
 })
 
+export const { updateLicenseExpire } = dropdownSlice.actions;
 export default dropdownSlice.reducer

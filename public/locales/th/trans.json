@@ -492,7 +492,9 @@
     "image-required": "จำเป็นต้องมีรูปภาพ",
     "start-from": "เริ่มตั้งแต่",
     "list": "รายการ",
-    "current-number-detections": "จำนวนตรวจจับได้ ณ ปัจจุบัน"
+    "current-number-detections": "จำนวนตรวจจับได้ ณ ปัจจุบัน",
+    "center": "Center",
+    "license-expire": "License Expire"
   },
   "alert": {
     "save-success": "บันทึกการเปลี่ยนแปลงสำเร็จ",

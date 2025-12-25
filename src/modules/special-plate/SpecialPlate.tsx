@@ -55,9 +55,11 @@ import {
   SpecialPlate, 
   SpecialPlateFilesResponse, 
   FileDataResponse, 
+  ImageDataResponse,
   CheckpointResponse, 
   ZipDownloadResponse,
   FileDataDetail,
+  ImageDataDetail,
 } from "../../features/types";
 
 dayjs.extend(buddhistEra)
@@ -155,9 +157,9 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
   const fetchSpecialPlateImages = async (uid: string) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
-    let imagesData: FileDataDetail[] = [];
+    let imagesData: ImageDataDetail[] = [];
     try {
-      const response = await fetchClient<FileDataResponse>(combineURL(CENTER_API, "/special-plate-images/get"), {
+      const response = await fetchClient<ImageDataResponse>(combineURL(CENTER_API, "/special-plate-images/get"), {
         method: "GET",
         signal: controller.signal,
         queryParams: {
@@ -560,12 +562,17 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
                             '& td, & th': { borderBottom: '1px dashed #ADADAD' }
                           }}
                         >
-                          <TableCell sx={{ backgroundColor: "#393B3A", color: "#FFFFFF", height: "83px" }}>{ "Owner" }</TableCell>
+                          <TableCell sx={{ backgroundColor: "#393B3A", color: "#FFFFFF", height: "83px" }}>{data.checkpoint_uid ? data.checkpoint_name : t('text.center')}</TableCell>
                           <TableCell sx={{ backgroundColor: "#48494B", color: "#FFFFFF", height: "83px", padding: "0 5px 0 5px" }}>
-                            <div className='flex items-center'>
-                              <span className='mr-2 text-[10px]'>?</span>
-                              {data.checkpoint_name}
-                            </div>
+                            {
+                              data.checkpoint_name ? (
+                                <div className='flex items-center'>
+                                  <span className='mr-2 text-[10px]'>&#8226;</span>
+                                  {data.checkpoint_name}
+                                </div>
+                              ) : 
+                              "-"
+                            }
                           </TableCell>
                           {
                             (() => {

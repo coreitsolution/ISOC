@@ -45,7 +45,7 @@ import { getUrls } from '../../config/runtimeConfig';
 import { useTranslation } from 'react-i18next';
 
 // Types
-import { SuspectPeople, WatchListFileResponse, SuspectPeopleResponse } from "../../features/types";
+import { SuspectPeople, WatchListFileResponse, SuspectPeopleResponse, WatchListImageResponse } from "../../features/types";
 
 // Utils
 import { fetchClient, combineURL } from "../../utils/fetchClient";
@@ -124,7 +124,7 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
       
       if (!confirmed) return;
 
-      const imageResponse = await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, `/watchlist-images/get`), {
+      const imageResponse = await fetchClient<WatchListImageResponse>(combineURL(CENTER_API, `/watchlist-images/get`), {
         method: "GET"
       })
 
@@ -134,7 +134,7 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
       };
 
       if (imageResponse.data.length > 0) {
-        await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, `/watchlist-images/delete`), {
+        await fetchClient<WatchListImageResponse>(combineURL(CENTER_API, `/watchlist-images/delete`), {
           method: "DELETE",
           queryParams: {
             ids: imageResponse.data.map(image => image.id).toString()
@@ -144,10 +144,10 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
         await Promise.all(
           imageResponse.data.map(async (data) => {
             const body = JSON.stringify({
-              urls: [data.url]
+              urls: [data.image_url]
             })
     
-            await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, `/upload/remove`), {
+            await fetchClient<WatchListImageResponse>(combineURL(CENTER_API, `/upload/remove`), {
               method: "POST",
               body,
             })
@@ -175,7 +175,7 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
         await Promise.all(
           fileResponse.data.map(async (data) => {
             const body = JSON.stringify({
-              urls: [data.url]
+              urls: [data.file_url]
             })
     
             await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, `/upload/remove`), {
@@ -329,7 +329,7 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
-      const response = await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, "/watchlist-images/get"), {
+      const response = await fetchClient<WatchListImageResponse>(combineURL(CENTER_API, "/watchlist-images/get"), {
         method: "GET",
         signal: controller.signal,
         queryParams: {
@@ -523,7 +523,7 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
                                     data.watchlist_images.map((image, index) => (
                                       <Image
                                         key={index}
-                                        imageSrc={`${CENTER_FILE_URL}${image.url}`} 
+                                        imageSrc={`${CENTER_FILE_URL}${image.image_url}`} 
                                         imageAlt={`image-${index}`}
                                         className="inline-flex items-center justify-center align-middle h-[70px] w-[70px]" 
                                       />
@@ -556,13 +556,13 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
                           <TableCell align="center" sx={{ backgroundColor: "#48494B", color: "#FFFFFF", height: "83px" }}>
                             {
                               (() => {
-                                const color = data.active === 1 ? "bg-[#4CB64C]" : "bg-[#ADADAD]";
+                                const color = data.active ? "bg-[#4CB64C]" : "bg-[#ADADAD]";
                                 return (
                                   <label
                                     className={`w-20 h-[30px] inline-flex items-center justify-center rounded
                                     ${color}`}
                                   >
-                                    { data.active === 1 ? "Active" : "Inactive" }
+                                    { data.active ? "Active" : "Inactive" }
                                   </label>
                                 )
                               })()

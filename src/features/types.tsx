@@ -106,6 +106,28 @@ export interface RealTimeLprData {
   detect_type: string;
 }
 
+export interface RealTimeFaceData {
+  id: number;
+  title_id: number;
+  camera_uid: string;
+  detect_type: string;
+  detect_image_url: string;
+  upload_image_url: string;
+  first_name: string;
+  last_name: string;
+  epoch_end: string;
+  color: string;
+  pin_background_color: string;
+  text_shadow: string;
+  title_name: string;
+  person_class_name: string;
+  special_person_remark: string;
+  camera_name: string;
+  special_person_owner_name: string;
+  special_person_owner_phone: string;
+  face_confidence: string;
+}
+
 export interface RealTimeLprDataResponse {
   statusCode: number;
   status: string;
@@ -191,7 +213,28 @@ export interface FileDataResponse {
 export interface FileDataDetail {
   created_at: string;
   id: number;
-  uid: string;
+  file_uid: string;
+  notes: string | null;
+  special_plate_id: number;
+  special_plate_uid: string;
+  title: string;
+  updated_at: string;
+  url: string;
+}
+
+export interface ImageDataResponse {
+  statusCode: number;
+  status: string;
+  success: boolean;
+  message: string;
+  pagination: Pagination;
+  data: ImageDataDetail[];
+}
+
+export interface ImageDataDetail {
+  created_at: string;
+  id: number;
+  image_uid: string;
   notes: string | null;
   special_plate_id: number;
   special_plate_uid: string;
@@ -230,6 +273,7 @@ export interface SpecialPlateFilesResponse {
 export interface SpecialPlate {
   id: number;
   uid: string;
+  center_uid: string;
   checkpoint_uid: string;
   checkpoint_name?: string;
   plate_prefix: string;
@@ -249,7 +293,7 @@ export interface SpecialPlate {
   deleted_by_id: number;
   created_at: string;
   updated_at: string;
-  imagesData?: FileDataDetail[];
+  imagesData?: ImageDataDetail[];
   filesData?: FileDataDetail[];
 }
 
@@ -264,8 +308,6 @@ export interface SpecialPlateFileData {
   created_at: string;
   updated_at: string;
 }
-
-export type SpecialPlateFile = Omit<SpecialPlateFileData, "id">;
 
 export interface FileUploadResponse {
   statusCode: number;
@@ -305,7 +347,7 @@ export interface SuspectPeople {
   behavior: string
   case_owner_name: string
   case_owner_phone: string
-  watchlist_images: WatchListFileData[]
+  watchlist_images: WatchListImageData[]
   watchlist_files: WatchListFileData[]
   visible: boolean
   notes: string
@@ -499,6 +541,8 @@ export interface Checkpoint {
   last_check: string;
   created_at: string;
   updated_at: string;
+  machine_id?: string;
+  is_license_expire?: boolean;
 }
 
 export interface CheckpointResponse {
@@ -548,6 +592,7 @@ export interface Camera {
   updated_at: string
   request_delete: boolean
   request_delete_reason: string | null
+  is_license_expire?: boolean;
 }
 
 export interface CameraResponse {
@@ -683,7 +728,7 @@ export interface WatchListFileData {
   id: number;
   watchlist_id: number;
   title: string;
-  url: string;
+  file_url: string;
   notes: string;
   created_at: string;
   updated_at: string;
@@ -696,6 +741,25 @@ export interface WatchListFileResponse {
   message: string;
   pagination: Pagination;
   data: WatchListFileData[];
+}
+
+export interface WatchListImageData {
+  id: number;
+  watchlist_id: number;
+  title: string;
+  image_url: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WatchListImageResponse {
+  statusCode: number;
+  status: string;
+  success: boolean;
+  message: string;
+  pagination: Pagination;
+  data: WatchListImageData[];
 }
 
 export interface Counter {
@@ -716,4 +780,28 @@ export interface ZipDownloadResponse {
 
 export interface ZipDownload {
   zipUrl: string;
+}
+
+export interface MachineIdResponse {
+  statusCode: number;
+  status: string;
+  success: boolean;
+  message: string;
+  machineId: string;
+}
+
+export interface VerifyLicense {
+  valid: boolean;
+  machineId: string;
+  serialNumber: string;
+  expTs: number;
+  expUtc: string;
+}
+
+export interface VerifyLicenseResponse {
+  statusCode: number;
+  status: string;
+  success: boolean;
+  message: string;
+  data?: VerifyLicense;
 }

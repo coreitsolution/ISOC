@@ -492,7 +492,9 @@
     "image-required": "Image is required",
     "start-from": "Start From",
     "list": "List",
-    "current-number-detections": "Current number of detections"
+    "current-number-detections": "Current number of detections",
+    "center": "Center",
+    "license-expire": "License Expire"
   },
   "alert": {
     "save-success": "Changes saved successfully",
