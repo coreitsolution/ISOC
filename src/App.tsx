@@ -2,7 +2,7 @@ import './App.css';
 import { Outlet, Route, Routes, useNavigate } from "react-router-dom";
 import Nav from "./layout/nav";
 import "./styles/Main.scss";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { useAppDispatch } from './app/hooks';
 import { useSelector } from "react-redux";
 import { RootState } from "./app/store";
@@ -120,6 +120,10 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
 
   const sliceSpecialPlate = useSelector((state: RootState) => state.specialPlateData);
   const sliceDropdown = useSelector((state: RootState) => state.dropdownData);
+
+  // Ref
+  const cameraSelectedRef = useRef<string[]>([]);
+  const lastFetchRef = useRef(0);
   
   const enabled = Boolean(authData.token);
 
@@ -276,6 +280,10 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
     }
   }, [sliceDropdown.checkpoints, enabled])
 
+  useEffect(() => {
+    cameraSelectedRef.current = cameraSelected;
+  }, [cameraSelected]);
+
   const fetchMachineId = async () => {
     try {
       const res = await fetchClient<MachineIdResponse>(combineURL(CENTER_API, "/checkpoints/machine-id"), {
@@ -380,17 +388,25 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  const handleRealtimeMessage = async (message: any) => {   
+  const handleRealtimeMessage = useCallback(async (message: any) => {   
     dispatch(upsertRealtimeData({
       ...message,
       detect_type: "lpr",
     }));
-    dispatch(fetchVehicleCountThunk(cameraSelected.length > 0 ?
-      {
-        cameraUids: cameraSelected.join(",")
-      } : 
-      undefined
-    ));
+    const now = Date.now();
+
+    if (now - lastFetchRef.current > 1000) {
+      lastFetchRef.current = now;
+
+      const uids = cameraSelectedRef.current;
+
+      if (uids.length > 0) {
+        dispatch(fetchVehicleCountThunk({
+          cameraUids: uids.join(","),
+          _t: now.toString()
+        }));
+      }
+    }
 
     if (!message.is_special_plate) return;
 
@@ -416,7 +432,7 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
       text_shadow: textShadow,
     }
     dispatch(addToastMessage(updatedData));
-  };
+  }, [dispatch, sliceDropdown.plateTypes, sliceSpecialPlate.specialPlates]);
 
   const handleCheckpointDataMessage = (message: Checkpoint) => {
     createNotificationToast({

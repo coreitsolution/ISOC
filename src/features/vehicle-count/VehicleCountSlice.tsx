@@ -50,11 +50,16 @@ const vehicleCountSlice = createSlice({
       .addCase(fetchVehicleCountThunk.fulfilled, (state, action) => {
         state.vehicleCountStatus = Status.SUCCEEDED;
         state.vehicleCount = action.payload;
+
+        if (typeof window !== 'undefined') {
+          window.requestAnimationFrame(() => {});
+        }
       })
       .addCase(fetchVehicleCountThunk.rejected, (state, action) => {
-        state.vehicleCountStatus = Status.SUCCEEDED;
-        state.vehicleCountError = action.error.message || "Failed to fetch vehicle count";
-      })
+        state.vehicleCountStatus = Status.FAILED;
+        state.vehicleCountError =
+          action.error.message || "Failed to fetch vehicle count";
+      });
   }
 })
 
