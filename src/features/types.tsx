@@ -330,6 +330,7 @@ export interface UploadFileData {
 }
 
 export interface SuspectPeople {
+  uid: string
   id: number
   title_id: number
   firstname: string

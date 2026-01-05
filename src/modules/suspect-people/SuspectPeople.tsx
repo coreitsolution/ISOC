@@ -118,14 +118,17 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
     alert(data.id)
   }
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (uid: string) => {
     try {
       const confirmed = await PopupMessageWithCancel(t('message.warning.delete-confirmation'), t('message.warning.delete-confirmation-message'), t('button.confirm'), t('button.cancel'), "warning", "#b91c1c")
       
       if (!confirmed) return;
 
       const imageResponse = await fetchClient<WatchListImageResponse>(combineURL(CENTER_API, `/watchlist-images/get`), {
-        method: "GET"
+        method: "GET",
+        queryParams: {
+          filter: `watchlist_uid=${uid}`
+        }
       })
 
       if (!imageResponse.success) {
@@ -156,7 +159,10 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
       }
 
       const fileResponse = await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, `/watchlist-files/get`), {
-        method: "GET"
+        method: "GET",
+        queryParams: {
+          filter: `watchlist_uid=${uid}`
+        }
       })
 
       if (!fileResponse.success) {
@@ -189,7 +195,7 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
       const deleteSuspectPeople = await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, `/watchlist/delete`), {
         method: "DELETE",
         queryParams: {
-          ids: [id].toString()
+          uids: [uid].toString()
         },
       })
 
@@ -586,7 +592,7 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
                               sx={{
                                 borderRadius: "4px !important",
                               }}
-                              onClick={ () => handleDelete(data.id)}
+                              onClick={ () => handleDelete(data.uid)}
                             >
                               <Trash2 color='#FFFFFF' size={20} />
                             </IconButton>
