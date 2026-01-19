@@ -393,7 +393,29 @@ export interface FileDataResponse {
   success: boolean;
   message: string;
   pagination: Pagination;
-  data: FileDataDetail[];
+  data: FileDetail[];
+}
+
+export interface FileDetail {
+  created_at: string;
+  id: number;
+  notes: string | null;
+  uid: string;
+  special_plate_uid: string;
+  title: string;
+  updated_at: string;
+  url: string;
+}
+
+export interface ImageDataDetail {
+  created_at: string;
+  id: number;
+  notes: string | null;
+  uid: string;
+  special_plate_uid: string;
+  title: string;
+  updated_at: string;
+  image_url: string;
 }
 
 export interface FileDataDetail {
@@ -401,10 +423,10 @@ export interface FileDataDetail {
   id: number;
   notes: string | null;
   uid: string;
-  special_plate_id: number;
+  special_plate_uid: string;
   title: string;
   updated_at: string;
-  url: string;
+  file_url: string;
 }
 
 export interface SpecialPlate {
@@ -427,8 +449,8 @@ export interface SpecialPlate {
   deleted_by_id: number;
   created_at: string;
   updated_at: string;
-  imagesData?: FileDataDetail[];
-  filesData?: FileDataDetail[];
+  images: ImageDataDetail[];
+  files: FileDataDetail[];
 }
 
 export interface SpecialPlateResponse {

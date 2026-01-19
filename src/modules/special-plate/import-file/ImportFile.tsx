@@ -155,7 +155,7 @@ const ImportFile: React.FC<ImportFileProps> = ({open, onClose}) => {
         if (data.imagesUploadedData && Object.keys(data.imagesUploadedData).length > 0) {
           const body = JSON.stringify({
             special_plate_uid: response.data.uid,
-            url: data.imagesUploadedData.url,
+            image_url: data.imagesUploadedData.url,
             title: data.imagesUploadedData.title
           });
           await fetchClient<SpecialPlateCreateResponse>(combineURL(API_URL, "/special-plate-images/create"), {
@@ -170,7 +170,7 @@ const ImportFile: React.FC<ImportFileProps> = ({open, onClose}) => {
         if (data.fileUploadedData && Object.keys(data.fileUploadedData).length > 0) {
           const body = JSON.stringify({
             special_plate_uid: response.data.uid,
-            url: data.fileUploadedData.url,
+            file_url: data.fileUploadedData.url,
             title: data.fileUploadedData.title
           });
           await fetchClient<SpecialPlateCreateResponse>(combineURL(API_URL, "/special-plate-files/create"), {

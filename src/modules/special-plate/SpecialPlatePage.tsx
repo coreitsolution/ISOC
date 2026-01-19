@@ -54,9 +54,7 @@ import {
   SpecialPlateResponse, 
   SpecialPlate, 
   SpecialPlateFilesResponse, 
-  FileDataResponse, 
   ZipDownloadResponse,
-  FileDataDetail,
 } from "../../features/types";
 
 dayjs.extend(buddhistEra)
@@ -79,6 +77,7 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
   // Data
   const [specialPlateList, setSpecialPlateList] = useState<SpecialPlate[]>([]);
   const [selectedRow, setSelectedRow] = useState<SpecialPlate | null>(null)
+  const [searchFilter, setSearchFilter] = useState<string[]>([]);
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -98,7 +97,7 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
   );
 
   useEffect(() => {
-    fetchSpecialPlates(page, rowsPerPage);
+    fetchSpecialPlates(page, rowsPerPage, searchFilter.join(','));
   }, [])
 
   const fetchSpecialPlates = async (page: number, limit: number, filter?: string) => {
@@ -117,22 +116,7 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
       })
 
       if (response.success) {
-        const updated = await Promise.all(
-          response.data.map(async (data) => {
-            const [imagesData, filesData] = await Promise.all([
-              fetchSpecialPlateImages(data.uid),
-              fetchSpecialPlateFiles(data.uid),
-            ]);
-
-            return {
-              ...data,
-              imagesData,
-              filesData,
-            };
-          })
-        );
-
-        setSpecialPlateList(updated);
+        setSpecialPlateList(response.data);
         setTotalPages(response.pagination.maxPage);
         setTotalData(response.pagination.countAll);
       }
@@ -147,62 +131,6 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
         setIsLoading(false);
       }, 500)
     }
-  }
-
-  const fetchSpecialPlateImages = async (uid: string) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    let imagesData: FileDataDetail[] = [];
-    try {
-      const response = await fetchClient<FileDataResponse>(combineURL(API_URL, "/special-plate-images/get"), {
-        method: "GET",
-        signal: controller.signal,
-        queryParams: {
-          filter: `special_plate_uid=${uid}`
-        }
-      })
-
-      if (response.success) {
-        imagesData = response.data;
-      }
-    }
-    catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      PopupMessage(t('message.error.error-while-fetching-image'), errorMessage, "error");
-      imagesData = [];
-    }
-    finally {
-      clearTimeout(timeoutId);
-    }
-    return imagesData;
-  }
-
-  const fetchSpecialPlateFiles = async (uid: string) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    let filesData: FileDataDetail[] = [];
-    try {
-      const response = await fetchClient<FileDataResponse>(combineURL(API_URL, "/special-plate-files/get"), {
-        method: "GET",
-        signal: controller.signal,
-        queryParams: {
-          filter: `special_plate_uid=${uid}`
-        }
-      })
-
-      if (response.success) {
-        filesData = response.data;
-      }
-    }
-    catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      PopupMessage(t('message.error.error-while-fetching-image'), errorMessage, "error");
-      filesData = [];
-    }
-    finally {
-      clearTimeout(timeoutId);
-    }
-    return filesData;
   }
 
   const handleImportMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -320,7 +248,7 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
       };
 
       PopupMessage(t('message.success.delete-success'), "", "success");
-      await fetchSpecialPlates(1, rowsPerPage);
+      await fetchSpecialPlates(1, rowsPerPage, searchFilter.join(','));
       bc.postMessage("reload");
     }
     catch (error) {
@@ -332,13 +260,13 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
   const handleRowsPerPageChange = async (event: SelectChangeEvent) => {
       const limit = parseInt(event.target.value)
       setRowsPerPage(limit);
-      await fetchSpecialPlates(page, limit);
+      await fetchSpecialPlates(page, limit, searchFilter.join(','));
     };
   
   const handlePageChange = async (event: React.ChangeEvent<unknown>, value: number) => {
     event.preventDefault();
     setPage(value);
-    await fetchSpecialPlates(value, rowsPerPage);
+    await fetchSpecialPlates(value, rowsPerPage, searchFilter.join(','));
   };
 
   const handlePageInputKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -346,7 +274,7 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
       event.preventDefault();
   
       setPage(pageInput);
-      await fetchSpecialPlates(pageInput, rowsPerPage);
+      await fetchSpecialPlates(pageInput, rowsPerPage, searchFilter.join(','));
     }
   };
 
@@ -373,13 +301,13 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
 
   const handleManageSpecialPlateClose = async () => {
     setOpenManageSpecialPlate(false);
-    await fetchSpecialPlates(1, rowsPerPage);
+    await fetchSpecialPlates(1, rowsPerPage, searchFilter.join(','));
     setSelectedRow(null);
   }
 
   const handleFileImportClose = async () => {
     setIsFileImportOpen(false);
-    await fetchSpecialPlates(1, rowsPerPage);
+    await fetchSpecialPlates(1, rowsPerPage, searchFilter.join(','));
   }
 
   const handleSearch = async (searchFilter: FormData) => {
@@ -402,6 +330,7 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
     }
 
     filterParts.push(`deleted=false`);
+    setSearchFilter(filterParts);
 
     await fetchSpecialPlates(1, rowsPerPage, filterParts.join(','));
   }
@@ -542,14 +471,14 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
                           }
                           <TableCell align="center" sx={{ backgroundColor: "#48494B", padding: "6px", height: "83px" }}>
                             {
-                              Array.isArray(data.imagesData) && data.imagesData.length > 0 ? 
+                              Array.isArray(data.images) && data.images.length > 0 ? 
                               (
                                 <div className='flex items-center justify-center space-x-1'>
                                   {
-                                    data.imagesData.map((image, index) => (
+                                    data.images.map((image, index) => (
                                       <Image
                                         key={index}
-                                        imageSrc={`${IMAGE_URL}${image.url}`} 
+                                        imageSrc={`${IMAGE_URL}${image.image_url}`} 
                                         imageAlt={`image-${index}`}
                                         className="inline-flex items-center justify-center align-middle h-[70px] w-[70px]" 
                                       />
@@ -588,7 +517,7 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
                           </TableCell>
                           {
                             (() => {
-                              const isFilesDataExist = Array.isArray(data.filesData) && data.filesData.length > 0;
+                              const isFilesDataExist = Array.isArray(data.files) && data.files.length > 0;
                               return (
                                 <TableCell align="center" sx={{ backgroundColor: "#393B3A", color: "#FFFFFF", height: "83px" }}>
                                   <IconButton
