@@ -852,7 +852,7 @@ const SearchSuspectPerson: React.FC<SearchSuspectPersonProps> = ({}) => {
                         {
                           (() => {
                             const personType = personTypesOptions.find(pt => pt.value === data.person_class_id);
-                            const { color, backgroundColor } = getPersonTypeColor(data.person_class_id);
+                            const { color, backgroundColor } = getPersonTypeColor(personType?.label || "");
                             return (
                               <div className='flex justify-center items-center'>
                                 <label

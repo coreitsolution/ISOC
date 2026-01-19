@@ -26,6 +26,7 @@ import {
   WatchListImageResponse,
   WatchListImageData,
   SuspectPeopleCreateResponse,
+  FileUploadResponse,
   SuspectPeople,
   WatchListFileResponse,
 } from "../../../features/types";
@@ -67,8 +68,8 @@ interface FormData {
   behavior: string
   case_owner_name: string
   case_owner_phone: string
-  imagesData: WatchListImageData[]
-  filesData: WatchListFileData[]
+  images: WatchListImageData[]
+  files: WatchListFileData[]
   active_status: number
 };
 
@@ -130,8 +131,8 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
     behavior: "",
     case_owner_name: "",
     case_owner_phone: "",
-    imagesData: [],
-    filesData: [],
+    images: [],
+    files: [],
     active_status: 0,
   });
 
@@ -163,8 +164,8 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         behavior: selectedRow.behavior,
         case_owner_name: selectedRow.case_owner_name,
         case_owner_phone: selectedRow.case_owner_phone,
-        imagesData: selectedRow.watchlist_images,
-        filesData: selectedRow.watchlist_files,
+        images: selectedRow.images,
+        files: selectedRow.files,
         active_status: selectedRow.active  ? 1 : 0,
       });
       setValue("prefix", selectedRow.title_id);
@@ -178,7 +179,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       setValue("zipcode", selectedRow.zipcode);
       setValue("personType", selectedRow.person_class_id);
       setValue("behavior", selectedRow.behavior);
-      setValue("image", selectedRow.watchlist_images ? "uploaded" : "");
+      setValue("image", selectedRow.images ? "uploaded" : "");
       setValue("case_owner_name", ownerName);
       setValue("case_owner_phone", ownerPhone);
       setValue("case_number", selectedRow.case_number);
@@ -204,8 +205,8 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         behavior: "",
         case_owner_name: ownerName,
         case_owner_phone: ownerPhone,
-        imagesData: [],
-        filesData: [],
+        images: [],
+        files: [],
         active_status: 0,
       });
       setValue("prefix", "");
@@ -460,7 +461,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
   const handleDeleteImage = async () => {
     setFormData((prev) => ({
       ...prev,
-      imagesData: []
+      images: []
     }))
   }
 
@@ -476,27 +477,36 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         formData.append("files", file)
       })
 
-      const response = await fetchClient<WatchListImageResponse>(combineURL(CENTER_API, "/upload/"), {
+      const response = await fetchClient<FileUploadResponse>(combineURL(CENTER_API, "/upload/"), {
         method: "POST",
         isFormData: true,
         body: formData,
       })
 
       if (response.success) {
+        const images = response.data.map((file) => ({
+          id: 0,
+          title: file.title,
+          image_url: file.url,
+          watchlist_uid: "",
+          notes: "",
+          created_at: "",
+          updated_at: "",
+        }))
         setFormData((prev) => ({
           ...prev,
-          imagesData: response.data,
+          images,
         }))
         setValue("image", "uploaded");
         clearErrors("image");
-        setImageImportDataList((prev) => ([...prev, ...response.data]));
+        setImageImportDataList((prev) => ([...prev, ...images]));
       }
     } 
     catch (error) {
       PopupMessage(t('message.error.error-upload-file'), error instanceof Error ? error.message : String(error) , "error");
     }
     
-  }, [formData.imagesData])
+  }, [formData.images])
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return
@@ -521,7 +531,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         if (response.success) {
           setFormData((prev) => ({
             ...prev,
-            filesData: [...prev.filesData, ...response.data],
+            files: [...prev.files, ...response.data],
           }))
           setFileImportDataList((prev) => ([...prev, ...response.data]));
         }
@@ -551,7 +561,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
   }
 
   const onSubmit = async (data: any) => {
-    if (formData.imagesData.length === 0) {
+    if (formData.images.length === 0) {
       setError("image", {
         type: "manual",
         message: t("text.image-required"),
@@ -611,11 +621,11 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       })
 
       if (response.success) {
-        if (formData.imagesData && Object.keys(formData.imagesData).length > 0) {
+        if (formData.images && Object.keys(formData.images).length > 0) {
           const body = JSON.stringify({
-            watchlist_id: response.data.id,
-            image_url: formData.imagesData[0].image_url,
-            title: formData.imagesData[0].title
+            watchlist_uid: response.data.uid,
+            image_url: formData.images[0].image_url,
+            title: formData.images[0].title
           });
           await fetchClient<WatchListImageResponse>(combineURL(CENTER_API, "/watchlist-images/create"), {
             method: "POST",
@@ -626,11 +636,11 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
           })
         }
 
-        if (formData.filesData && formData.filesData.length > 0) {
+        if (formData.files && formData.files.length > 0) {
           await Promise.all(
-            formData.filesData.map(async (file) => {
+            formData.files.map(async (file) => {
               const body = JSON.stringify({
-                watchlist_id: response.data.id,
+                watchlist_uid: response.data.uid,
                 file_url: file.file_url,
                 title: file.title
               });
@@ -645,12 +655,12 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
           )
         }
 
-        const unusedImages = imageImportDataList.filter((image) => !formData.imagesData.find((img) => img.image_url === image.image_url));
+        const unusedImages = imageImportDataList.filter((image) => !formData.images.find((img) => img.image_url === image.image_url));
         if (unusedImages.length > 0) {
           await deleteImportImageData(unusedImages);
         }
 
-        const unusedFiles = fileImportDataList.filter((file) => !formData.filesData.find((f) => f.file_url === file.file_url));
+        const unusedFiles = fileImportDataList.filter((file) => !formData.files.find((f) => f.file_url === file.file_url));
         if (unusedFiles.length > 0) {
           await deleteImportFileData(unusedFiles);
         }
@@ -696,7 +706,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       const endArrestDate = data.arrest_warrant_expire_date ? dayjs(data.arrest_warrant_expire_date).format("YYYY-MM-DD") : null;
 
       const body = JSON.stringify({
-        id: selectedRow.id,
+        uid: selectedRow.uid,
         ...(
           getId(data.prefix) !== selectedRow?.title_id && { title_id: getId(data.prefix) }
         ),
@@ -758,8 +768,8 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       })
 
       if (isImageChanged) {
-        const imageArray = getImagesArrayWithoutNulls(formData.imagesData);
-        const oldImageArray = selectedRow?.watchlist_images ?? [];
+        const imageArray = getImagesArrayWithoutNulls(formData.images);
+        const oldImageArray = selectedRow?.images ?? [];
         const { added, removed } = getFilesDiff(imageArray, oldImageArray);
 
         if (removed.length > 0) {
@@ -778,7 +788,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
           await Promise.all(
             added.map(async (image) => {
               const body = JSON.stringify({
-                watchlist_id: selectedRow.id,
+                watchlist_uid: selectedRow.uid,
                 url: image.url,
                 title: image.title
               });
@@ -796,7 +806,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       }
 
       if (isFileChanged) {
-        const { added, removed } = getFilesDiff(formData.filesData, selectedRow?.watchlist_files ?? []);
+        const { added, removed } = getFilesDiff(formData.files, selectedRow?.files ?? []);
 
         if (removed.length > 0) {
           await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, `/watchlist-files/delete`), {
@@ -814,7 +824,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
           await Promise.all(
             added.map(async (file) => {
               const body = JSON.stringify({
-                watchlist_id: selectedRow.id,
+                watchlist_uid: selectedRow.uid,
                 url: file.url,
                 title: file.title
               });
@@ -848,12 +858,12 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
     const status = selectedRow?.active ? 1 : 0;
     const isOnlyStatusChanged = formData.active_status !== status;
 
-    const imageArray = getImagesArrayWithoutNulls(formData.imagesData).map((image) => image.image_url);
-    const oldImageArray = selectedRow?.watchlist_images?.map((image) => image.image_url) ?? [];
+    const imageArray = getImagesArrayWithoutNulls(formData.images).map((image) => image.image_url);
+    const oldImageArray = selectedRow?.images?.map((image) => image.image_url) ?? [];
     const isImageChanged = JSON.stringify(imageArray) !== JSON.stringify(oldImageArray);
 
-    const fileArray = getFilesArrayWithoutNulls(formData.filesData).map((file) => file.file_url);
-    const oldFileArray = selectedRow?.watchlist_files?.map((file) => file.file_url) ?? [];
+    const fileArray = getFilesArrayWithoutNulls(formData.files).map((file) => file.file_url);
+    const oldFileArray = selectedRow?.files?.map((file) => file.file_url) ?? [];
     const isFileChanged = JSON.stringify(fileArray) !== JSON.stringify(oldFileArray);
 
     const arrestDate = formData.arrest_warrant_date ? dayjs(formData.arrest_warrant_date).format("YYYY-MM-DD") : null;
@@ -946,8 +956,8 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       behavior: "",
       case_owner_name: "",
       case_owner_phone: "",
-      imagesData: [],
-      filesData: [],
+      images: [],
+      files: [],
       active_status: 0,
     });
     setValue("prefix", "");
@@ -974,7 +984,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
   const handleDeleteFile = async(index: number) => {
     setFormData((prev) => ({
       ...prev,
-      filesData: prev.filesData.filter((_, i) => i !== index),
+      files: prev.files.filter((_, i) => i !== index),
     }))
   }
 
@@ -1348,11 +1358,11 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
                   <label
                     className="relative flex items-center justify-center w-full h-[250px] mt-[5px] bg-[#48494B] cursor-pointer overflow-hidden hover:bg-gray-800"
                   >
-                    { formData.imagesData.length > 0 && formData.imagesData[0]?.image_url ? (
+                    { formData.images.length > 0 && formData.images[0]?.image_url ? (
                       <div className="relative w-full h-full">
                         <div className="absolute inset-0">
                           <img
-                            src={`${CENTER_FILE_URL}${formData.imagesData[0].image_url}`}
+                            src={`${CENTER_FILE_URL}${formData.images[0].image_url}`}
                             alt="Uploaded 1"
                             className="object-contain w-full h-full"
                           />
@@ -1422,14 +1432,14 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
                 <div id="file-list-part" className="mt-[15px] h-[35vh] overflow-y-auto">
                   <table className="w-full">
                     <tbody>
-                      {formData.filesData && formData.filesData.length > 0 ? (
-                        formData.filesData.map((file, index) => (
+                      {formData.files && formData.files.length > 0 ? (
+                        formData.files.map((file, index) => (
                           <tr
                             key={`${file.title}-${index}`}
                             className={`h-10 ${
                               index % 2 === 0 ? "bg-[#393B3A]" : "bg-[#48494B]"
                             } ${
-                              index === formData.filesData.length - 1
+                              index === formData.files.length - 1
                                 ? "border-b border-[#D9D9D9]"
                                 : "border-b border-dashed border-[#D9D9D9]"
                             }`}

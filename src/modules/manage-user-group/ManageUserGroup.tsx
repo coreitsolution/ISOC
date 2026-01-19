@@ -67,15 +67,14 @@ const ManageUserGroup: React.FC<ManageUserGroupProps> = ({open, onClose, user, s
     "realtime",
     "conditionSearch",
     // "beforeAfterSearch",
-    // "suspectPersonManage",
-    // "suspectPersonSearch",
+    "suspectPersonManage",
+    "suspectPersonSearch",
     "specialPlateManage",
     // "specialPlateSearch",
     // "executiveReport",
     "manageUser",
     "setting",
     "manageCheckpointCameras",
-    "chart",
   ];
   const checkpointKeys: CheckpointPermissionsKey[] = [
     "realtime",
@@ -104,12 +103,12 @@ const ManageUserGroup: React.FC<ManageUserGroupProps> = ({open, onClose, user, s
     // beforeAfterSearch: {
     //   select: false,
     // },
-    // suspectPersonManage: {
-    //   select: false,
-    // },
-    // suspectPersonSearch: {
-    //   select: false,
-    // },
+    suspectPersonManage: {
+      select: false,
+    },
+    suspectPersonSearch: {
+      select: false,
+    },
     specialPlateManage: {
       select: false,
     },
@@ -198,16 +197,16 @@ const ManageUserGroup: React.FC<ManageUserGroupProps> = ({open, onClose, user, s
       name: t('text.cp-real-time'),
     },
     // suspiciousPersonManage: {
-    //   name: t('text.cp-special-plate-search'),
+    //   name: t('text.cp-suspicious-person-search'),
     // },
     // suspiciousPersonSearch: {
-    //   name: t('text.cp-special-plate-manage'),
+    //   name: t('text.cp-suspicious-person-manage'),
     // },
     specialPlateManage: {
-      name: t('text.cp-suspicious-person-search'),
+      name: t('text.cp-special-plate-search'),
     },
     specialPlateSearch: {
-      name: t('text.cp-suspicious-person-manage'),
+      name: t('text.cp-special-plate-manage'),
     },
     setting: {
       name: t('text.cp-setting'),

@@ -17,6 +17,12 @@ export const mockUserGroups: UserGroup[] = [
         specialPlateManage: {
           select: true,
         },
+        suspectPersonManage: {
+          select: true,
+        },
+        suspectPersonSearch: {
+          select: true,
+        },
         manageUser: {
           select: true,
         },
@@ -24,9 +30,6 @@ export const mockUserGroups: UserGroup[] = [
           select: true,
         },
         manageCheckpointCameras: {
-          select: true,
-        },
-        chart: {
           select: true,
         },
       },
@@ -63,6 +66,12 @@ export const mockUserGroups: UserGroup[] = [
         specialPlateManage: {
           select: true,
         },
+        suspectPersonManage: {
+          select: true,
+        },
+        suspectPersonSearch: {
+          select: true,
+        },
         manageUser: {
           select: true,
         },
@@ -70,9 +79,6 @@ export const mockUserGroups: UserGroup[] = [
           select: true,
         },
         manageCheckpointCameras: {
-          select: true,
-        },
-        chart: {
           select: true,
         },
       },
@@ -109,6 +115,12 @@ export const mockUserGroups: UserGroup[] = [
         specialPlateManage: {
           select: true,
         },
+        suspectPersonManage: {
+          select: true,
+        },
+        suspectPersonSearch: {
+          select: true,
+        },
         manageUser: {
           select: true,
         },
@@ -116,9 +128,6 @@ export const mockUserGroups: UserGroup[] = [
           select: true,
         },
         manageCheckpointCameras: {
-          select: true,
-        },
-        chart: {
           select: true,
         },
       },

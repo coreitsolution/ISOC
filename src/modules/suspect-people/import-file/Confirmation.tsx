@@ -110,14 +110,14 @@ const Confirmation: React.FC<ConfirmationProps> = ({setFinalDataList, filesDataL
               : prefix.title_en === data.title
           );
 
-          const districts = province ? await fetchDistricts(province.id) : [];
+          const districts = province ? await fetchDistricts(province.province_code) : [];
           const districtsInfo = districts.find(
             (d) => d.name_th === data.district || d.name_en === data.district
           );
 
           const subdistricts =
             province && districtsInfo
-              ? await fetchSubDistricts(province.id, districtsInfo.id)
+              ? await fetchSubDistricts(province.province_code, districtsInfo.district_code)
               : [];
 
           const subdistrictsInfo = subdistricts.find(
@@ -216,7 +216,7 @@ const Confirmation: React.FC<ConfirmationProps> = ({setFinalDataList, filesDataL
     setFinalDataList(updatedData)
   }
 
-  const fetchDistricts = async (province_id: number) => {
+  const fetchDistricts = async (province_code: string) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
@@ -224,7 +224,7 @@ const Confirmation: React.FC<ConfirmationProps> = ({setFinalDataList, filesDataL
         method: "GET",
         signal: controller.signal,
         queryParams: {
-          filter: `province_id=${province_id}`,
+          filter: `province_code=${province_code}`,
           limit: "60",
         }
       })
@@ -239,7 +239,7 @@ const Confirmation: React.FC<ConfirmationProps> = ({setFinalDataList, filesDataL
     }
   }
 
-  const fetchSubDistricts = async (province_id: number, district_id: number) => {
+  const fetchSubDistricts = async (province_code: string, district_code: string) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
@@ -247,7 +247,7 @@ const Confirmation: React.FC<ConfirmationProps> = ({setFinalDataList, filesDataL
         method: "GET",
         signal: controller.signal,
         queryParams: {
-          filter: `province_id=${province_id},district_id=${district_id}`,
+          filter: `province_code=${province_code},district_code=${district_code}`,
             limit: "60",
         }
       })

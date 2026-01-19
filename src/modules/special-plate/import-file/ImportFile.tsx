@@ -88,12 +88,11 @@ const ImportFile: React.FC<ImportFileProps> = ({open, onClose}) => {
 
       // Add Special Plate
       await Promise.all(
-        importableData.map(data => data.checkpoints.map(c => {
+        importableData.map(data => {
           return addSpecialPlate({
             ...data,
-            checkpointsUid: c.value
           })
-        }))
+        })
       )
       
       // Delete unused images
@@ -143,9 +142,7 @@ const ImportFile: React.FC<ImportFileProps> = ({open, onClose}) => {
         ...(
           data.behavior && { behavior: data.behavior }
         ),
-        ...(
-          data.checkpointsUid && data.checkpointsUid !== "center" && { checkpoints_uid: data.checkpointsUid }
-        ),
+        sync_uid_list: data.checkpoints.filter(c => c.value !== "center").map(c => c.value),
         case_owner_name: data.case_owner_name,
         case_owner_phone: data.case_owner_phone.replace("-", ""),
         active: data.active ?? 0,
@@ -163,7 +160,7 @@ const ImportFile: React.FC<ImportFileProps> = ({open, onClose}) => {
         if (data.imagesUploadedData && Object.keys(data.imagesUploadedData).length > 0) {
           const body = JSON.stringify({
             special_plate_uid: response.data.uid,
-            url: data.imagesUploadedData.url,
+            image_url: data.imagesUploadedData.url,
             title: data.imagesUploadedData.title
           });
           await fetchClient<SpecialPlateCreateResponse>(combineURL(CENTER_API, "/special-plate-images/create"), {
@@ -178,7 +175,7 @@ const ImportFile: React.FC<ImportFileProps> = ({open, onClose}) => {
         if (data.fileUploadedData && Object.keys(data.fileUploadedData).length > 0) {
           const body = JSON.stringify({
             special_plate_uid: response.data.uid,
-            url: data.fileUploadedData.url,
+            file_url: data.fileUploadedData.url,
             title: data.fileUploadedData.title
           });
           await fetchClient<SpecialPlateCreateResponse>(combineURL(CENTER_API, "/special-plate-files/create"), {

@@ -219,7 +219,7 @@ export interface FileDataDetail {
   special_plate_uid: string;
   title: string;
   updated_at: string;
-  url: string;
+  file_url: string;
 }
 
 export interface ImageDataResponse {
@@ -240,7 +240,7 @@ export interface ImageDataDetail {
   special_plate_uid: string;
   title: string;
   updated_at: string;
-  url: string;
+  image_url: string;
 }
 
 export interface SpecialPlateResponse {
@@ -270,6 +270,11 @@ export interface SpecialPlateFilesResponse {
   data: SpecialPlateFileData[];
 }
 
+export interface SyncUid {
+  uid: string;
+  name: string;
+}
+
 export interface SpecialPlate {
   id: number;
   uid: string;
@@ -293,8 +298,10 @@ export interface SpecialPlate {
   deleted_by_id: number;
   created_at: string;
   updated_at: string;
-  imagesData?: ImageDataDetail[];
-  filesData?: FileDataDetail[];
+  images: ImageDataDetail[];
+  files: FileDataDetail[];
+  sync_uid_list: string[];
+  sync_uid_list_name: SyncUid[];
 }
 
 export interface SpecialPlateFileData {
@@ -348,8 +355,8 @@ export interface SuspectPeople {
   behavior: string
   case_owner_name: string
   case_owner_phone: string
-  watchlist_images: WatchListImageData[]
-  watchlist_files: WatchListFileData[]
+  images: WatchListImageData[]
+  files: WatchListFileData[]
   visible: boolean
   notes: string
   active: boolean
@@ -727,7 +734,7 @@ export interface SuspectPeopleCreateResponse {
 
 export interface WatchListFileData {
   id: number;
-  watchlist_id: number;
+  watchlist_uid: string;
   title: string;
   file_url: string;
   notes: string;
@@ -746,7 +753,7 @@ export interface WatchListFileResponse {
 
 export interface WatchListImageData {
   id: number;
-  watchlist_id: number;
+  watchlist_uid: string;
   title: string;
   image_url: string;
   notes: string;

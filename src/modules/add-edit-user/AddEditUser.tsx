@@ -385,7 +385,7 @@ const AddEditUser = () => {
         ...( formData.username !== user?.username &&
           { username: data.username }
         ),
-        ...( formData.password &&
+        ...( data.password &&
           { password: data.password }
         ),
         ...( pid !== user?.idcard &&

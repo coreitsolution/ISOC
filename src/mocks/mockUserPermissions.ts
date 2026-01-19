@@ -14,6 +14,12 @@ export const mockUserPermission: UserPermission[] = [
       specialPlateManage: {
         select: true,
       },
+      suspectPersonManage: {
+        select: true,
+      },
+      suspectPersonSearch: {
+        select: true,
+      },
       manageUser: {
         select: true,
       },
@@ -21,9 +27,6 @@ export const mockUserPermission: UserPermission[] = [
         select: true,
       },
       manageCheckpointCameras: {
-        select: true,
-      },
-      chart: {
         select: true,
       },
     },
@@ -54,6 +57,12 @@ export const mockUserPermission: UserPermission[] = [
       specialPlateManage: {
         select: true,
       },
+      suspectPersonManage: {
+        select: true,
+      },
+      suspectPersonSearch: {
+        select: true,
+      },
       manageUser: {
         select: true,
       },
@@ -61,9 +70,6 @@ export const mockUserPermission: UserPermission[] = [
         select: true,
       },
       manageCheckpointCameras: {
-        select: true,
-      },
-      chart: {
         select: true,
       },
     },
@@ -94,6 +100,12 @@ export const mockUserPermission: UserPermission[] = [
       specialPlateManage: {
         select: true,
       },
+      suspectPersonManage: {
+        select: true,
+      },
+      suspectPersonSearch: {
+        select: true,
+      },
       manageUser: {
         select: true,
       },
@@ -101,9 +113,6 @@ export const mockUserPermission: UserPermission[] = [
         select: true,
       },
       manageCheckpointCameras: {
-        select: true,
-      },
-      chart: {
         select: true,
       },
     },

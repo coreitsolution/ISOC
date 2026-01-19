@@ -137,13 +137,13 @@ const ImportFile: React.FC<ImportFileProps> = ({open, onClose}) => {
           data.address && { address: data.address }
         ),
         ...(
-          data.province_id && { province_id: data.province_id }
+          data.province_code && { province_code: data.province_code }
         ),
         ...(
-          data.district_id && { district_id: data.district_id }
+          data.district_code && { district_code: data.district_code }
         ),
         ...(
-          data.subdistrict_id && { subdistrict_id: data.subdistrict_id }
+          data.subdistrict_code && { subdistrict_code: data.subdistrict_code }
         ),
         ...(
           data.zipcode && { zipcode: data.zipcode }
@@ -170,8 +170,8 @@ const ImportFile: React.FC<ImportFileProps> = ({open, onClose}) => {
       if (response.success) {
         if (data.imagesUploadedData && Object.keys(data.imagesUploadedData).length > 0) {
           const body = JSON.stringify({
-            watchlist_id: response.data.id,
-            url: data.imagesUploadedData.url,
+            watchlist_uid: response.data.uid,
+            image_url: data.imagesUploadedData.url,
             title: data.imagesUploadedData.title
           });
           await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, "/watchlist-images/create"), {
@@ -185,8 +185,8 @@ const ImportFile: React.FC<ImportFileProps> = ({open, onClose}) => {
 
         if (data.fileUploadedData && Object.keys(data.fileUploadedData).length > 0) {
           const body = JSON.stringify({
-            watchlist_id: response.data.id,
-            url: data.fileUploadedData.url,
+            watchlist_uid: response.data.uid,
+            file_url: data.fileUploadedData.url,
             title: data.fileUploadedData.title
           });
           await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, "/watchlist-files/create"), {

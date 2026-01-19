@@ -73,6 +73,10 @@
     "all": "ทั้งหมด",
     "center": "Center"
   },
+  "info": {
+    "forgot-password": "ลืมรหัสผ่าน",
+    "contact-admin": "กรุณาติดต่อผู้ดูแลระบบ"
+  },
   "component": {
     "checkpoint-station": "จุดตรวจ/ชื่อด่าน",
     "checkpoint": "ด่าน",
@@ -494,7 +498,8 @@
     "list": "รายการ",
     "current-number-detections": "จำนวนตรวจจับได้ ณ ปัจจุบัน",
     "center": "Center",
-    "license-expire": "License Expire"
+    "license-expire": "License Expire",
+    "unknown": "ไม่ระบุ"
   },
   "alert": {
     "save-success": "บันทึกการเปลี่ยนแปลงสำเร็จ",

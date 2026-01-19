@@ -7,9 +7,6 @@ import LicenseExpireAnimation from "../../assets/animation/license-expire.json";
 // Components
 import LottieAnimation from '../lottie-animation/LottieAnimation';
 
-// i18n
-import { useTranslation } from 'react-i18next';
-
 type NotificationData = {
   title: string;
   content: string[];
@@ -25,12 +22,9 @@ interface LicenseExpirePopupProps extends Partial<ToastContentProps<Notification
 }
 
 const LicenseExpirePopup: React.FC<LicenseExpirePopupProps> = ({
-  closeToast = () => {},
   data,
   toastProps,
 }) => {
-  // i18n
-  const { t } = useTranslation();
 
   const isColored = (toastProps?.theme ?? 'dark') === 'dark';
 

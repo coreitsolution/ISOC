@@ -140,7 +140,7 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
         await fetchClient<WatchListImageResponse>(combineURL(CENTER_API, `/watchlist-images/delete`), {
           method: "DELETE",
           queryParams: {
-            ids: imageResponse.data.map(image => image.id).toString()
+            uids: imageResponse.data.map(image => image.watchlist_uid).toString()
           },
         })
 
@@ -174,7 +174,7 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
         await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, `/watchlist-files/delete`), {
           method: "DELETE",
           queryParams: {
-            ids: fileResponse.data.map(file => file.id).toString()
+            uids: fileResponse.data.map(file => file.watchlist_uid).toString()
           },
         })
 
@@ -309,12 +309,6 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
 
       if (response.success) {
         setSuspectPeopleList(response.data);
-        await Promise.all(
-          response.data.map(async (data) => {
-            await fetchSuspectPeopleImages(data.id);
-            await fetchSuspectPeopleFiles(data.id);
-          })
-        );
         setTotalPages(response.pagination.maxPage);
         setTotalData(response.pagination.countAll);
       }
@@ -328,64 +322,6 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
       setTimeout(() => {
         setIsLoading(false);
       }, 500)
-    }
-  }
-
-  const fetchSuspectPeopleImages = async (id: number) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    try {
-      const response = await fetchClient<WatchListImageResponse>(combineURL(CENTER_API, "/watchlist-images/get"), {
-        method: "GET",
-        signal: controller.signal,
-        queryParams: {
-          filter: `watchlist_id=${id}`
-        }
-      })
-
-      if (response.success) {
-        setSuspectPeopleList((prevList) =>
-          prevList.map((item) =>
-            item.id === id ? { ...item, watchlist_images: response.data } : item
-          )
-        );
-      }
-    }
-    catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      PopupMessage(t('message.error.error-while-fetching-image'), errorMessage, "error");
-    }
-    finally {
-      clearTimeout(timeoutId);
-    }
-  }
-
-  const fetchSuspectPeopleFiles = async (id: number) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    try {
-      const response = await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, "/watchlist-files/get"), {
-        method: "GET",
-        signal: controller.signal,
-        queryParams: {
-          filter: `watchlist_id=${id}`
-        }
-      })
-
-      if (response.success) {
-        setSuspectPeopleList((prevList) =>
-          prevList.map((item) =>
-            item.id === id ? { ...item, watchlist_files: response.data } : item
-          )
-        );
-      }
-    }
-    catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      PopupMessage(t('message.error.error-while-fetching-image'), errorMessage, "error");
-    }
-    finally {
-      clearTimeout(timeoutId);
     }
   }
 
@@ -522,11 +458,11 @@ const SuspectPeoplePage: React.FC<SuspectPeopleProps> = ({}) => {
                           </TableCell>
                           <TableCell align="center" sx={{ backgroundColor: "#393B3A", padding: "6px", height: "83px" }}>
                             {
-                              Array.isArray(data.watchlist_images) && data.watchlist_images.length > 0 ? 
+                              Array.isArray(data.images) && data.images.length > 0 ? 
                               (
                                 <div>
                                   {
-                                    data.watchlist_images.map((image, index) => (
+                                    data.images.map((image, index) => (
                                       <Image
                                         key={index}
                                         imageSrc={`${CENTER_FILE_URL}${image.image_url}`} 

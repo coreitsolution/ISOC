@@ -29,6 +29,12 @@ export const mockUsers: User[] = Array.from({ length: 5 }, (_, index) => ({
       specialPlateManage: {
         select: true,
       },
+      suspectPersonManage: {
+        select: true,
+      },
+      suspectPersonSearch: {
+        select: true,
+      },
       manageUser: {
         select: true,
       },

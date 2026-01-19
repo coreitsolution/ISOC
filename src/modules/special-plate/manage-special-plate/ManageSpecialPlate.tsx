@@ -24,14 +24,13 @@ import MultiSelectCheckpoints from '../../../components/multi-select/MultiSelect
 // Types
 import {
   FileData,
-  FileDataResponse,
-  ImageDataResponse,
   SpecialPlate,
   SpecialPlateResponse,
   SpecialPlateFilesResponse,
   SpecialPlateCreateResponse,
   Option,
   SpecialPlateFileData,
+  SyncUid,
 } from "../../../features/types";
 
 // Icons
@@ -50,7 +49,7 @@ import { fetchClient, combineURL } from "../../../utils/fetchClient";
 import { getUrls } from '../../../config/runtimeConfig';
 
 interface FormData {
-  id?: number;
+  uid?: string;
   plate_group: string
   plate_number: string
   region_code: string | Option
@@ -61,11 +60,12 @@ interface FormData {
   behavior: string
   case_owner_name: string
   case_owner_phone: string
-  imagesData: {
+  images: {
     [key: number]: FileData
   }
-  filesData: FileData[]
+  files: FileData[]
   active_status: number
+  sync_uid_list: SyncUid[]
 };
 
 
@@ -106,7 +106,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
   } = useForm();
 
   const [formData, setFormData] = useState<FormData>({
-    id: undefined,
+    uid: undefined,
     plate_group: "",
     plate_number: "",
     region_code: "",
@@ -117,9 +117,10 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
     behavior: "",
     case_owner_name: "",
     case_owner_phone: "",
-    imagesData: {},
-    filesData: [],
+    images: {},
+    files: [],
     active_status: 0,
+    sync_uid_list: [],
   });
 
   const sliceDropdown = useSelector(
@@ -134,7 +135,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
     const ownerPhone = authData.userInfo ? formatPhone(authData?.userInfo?.phone) : "-";
     if (selectedRow) {
       setFormData({
-        id: selectedRow.id,
+        uid: selectedRow.uid,
         plate_group: selectedRow.plate_prefix,
         plate_number: selectedRow.plate_number,
         region_code: selectedRow.region_code,
@@ -145,9 +146,10 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
         behavior: selectedRow.behavior,
         case_owner_name: ownerName,
         case_owner_phone: ownerPhone,
-        imagesData: {},
-        filesData: [],
+        images: selectedRow.images?.map(data => ({...data, uid: data.image_uid, url: data.image_url})),
+        files: selectedRow.files?.map(data => ({...data, uid: data.file_uid, url: data.file_url})),
         active_status: selectedRow.active ? 1 : 0,
+        sync_uid_list: selectedRow.sync_uid_list_name || [],
       });
       setValue("plate_group", selectedRow.plate_prefix);
       setValue("plate_number", selectedRow.plate_number);
@@ -160,12 +162,11 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
       setValue("arrest_date", selectedRow.arrest_warrant_date);
       setValue("end_arrest_date", selectedRow.arrest_warrant_expire_date);
       setValue("active_status", selectedRow.active);
-      fetchSpecialPlateImages();
-      fetchSpecialPlateFiles();
+      setSelectedCheckpointObjects(selectedRow.sync_uid_list_name.map((sync_uid) => ({value: sync_uid.uid, label: sync_uid.name})));
     }
     else {
       setFormData({
-        id: undefined,
+        uid: undefined,
         plate_group: "",
         plate_number: "",
         region_code: "",
@@ -176,9 +177,10 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
         behavior: "",
         case_owner_name: ownerName,
         case_owner_phone: ownerPhone,
-        imagesData: {},
-        filesData: [],
+        images: {},
+        files: [],
         active_status: 0,
+        sync_uid_list: [],
       });
       setValue("plate_group", "");
       setValue("plate_number", "");
@@ -192,6 +194,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
       setValue("end_arrest_date", "");
       setValue("active_status", "");
       setValue("active_status", 0);
+      setSelectedCheckpointObjects([{label: t('dropdown.center'), value: "center"}]);
     }
   }, [selectedRow, authData.userInfo])
 
@@ -224,68 +227,6 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
       setCheckpointOption([{label: t('dropdown.center'), value: "center"}, ...options]);
     }
   }, [sliceDropdown.checkpoints, i18n.language, i18n.isInitialized]);
-
-  useEffect(() => {
-    if (checkpointOption.length > 0) {
-      setSelectedCheckpointObjects(checkpointOption)
-    }
-  }, [checkpointOption])
-
-  const fetchSpecialPlateImages = async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    try {
-      const response = await fetchClient<ImageDataResponse>(combineURL(CENTER_API, "/special-plate-images/get"), {
-        method: "GET",
-        signal: controller.signal,
-        queryParams: {
-          filter: `special_plate_uid=${selectedRow?.uid}`
-        }
-      })
-
-      if (response.success) {
-        setFormData((prevData) => ({
-          ...prevData,
-          imagesData: response.data.map(data => ({...data, uid: data.image_uid}))
-        }));
-      }
-    }
-    catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      PopupMessage(t('message.error.error-while-fetching-image'), errorMessage, "error");
-    }
-    finally {
-      clearTimeout(timeoutId);
-    }
-  }
-
-  const fetchSpecialPlateFiles = async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    try {
-      const response = await fetchClient<FileDataResponse>(combineURL(CENTER_API, "/special-plate-files/get"), {
-        method: "GET",
-        signal: controller.signal,
-        queryParams: {
-          filter: `special_plate_uid=${selectedRow?.uid}`
-        }
-      })
-
-      if (response.success) {
-        setFormData((prevData) => ({
-          ...prevData,
-          filesData: response.data.map(data => ({...data, uid: data.file_uid}))
-        }));
-      }
-    }
-    catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      PopupMessage(t('message.error.error-while-fetching-image'), errorMessage, "error");
-    }
-    finally {
-      clearTimeout(timeoutId);
-    }
-  }
 
   const handleCancelClick = async () => {
     if (imageImportDataList.length > 0) {
@@ -379,12 +320,12 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
     }
 
     setFormData((prev) => {
-      const updatedImagesData = { ...prev.imagesData }
+      const updatedImagesData = { ...prev.images }
       delete updatedImagesData[position]
 
       return {
         ...prev,
-        imagesData: updatedImagesData,
+        images: updatedImagesData,
       }
     })
   }, [])
@@ -411,7 +352,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
     }
 
     const availablePositions = getNextAvailablePositions(
-      formData.imagesData,
+      formData.images,
       fileArray.length
     )
 
@@ -449,8 +390,8 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
 
         setFormData((prev) => ({
           ...prev,
-          imagesData: {
-            ...prev.imagesData,
+          images: {
+            ...prev.images,
             ...imagesDataUpdates,
           },
         }))
@@ -500,7 +441,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
 
           setFormData((prev) => ({
             ...prev,
-            filesData: [...prev.filesData, ...uploadedFiles],
+            files: [...prev.files, ...uploadedFiles],
           }))
           setFileImportDataList((prev) => ([...prev, ...response.data]));
         }
@@ -551,7 +492,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
 
       setFormData((prev) => ({
         ...prev,
-        filesData: prev.filesData.filter((_, i) => i !== index),
+        files: prev.files.filter((_, i) => i !== index),
       }))
     }
     catch (error) {
@@ -603,6 +544,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
         ...(
           data.behavior && { behavior: data.behavior }
         ),
+        sync_uid_list: selectedCheckpointObjects.filter(c => c.value !== "center").map(c => c.value),
         case_owner_name: data.case_owner_name,
         case_owner_phone: data.case_owner_phone ? data.case_owner_phone.replaceAll("-", "").slice(0, 10) : "",
         active: data.active_status === 1 ? true : false,
@@ -617,8 +559,8 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
       })
 
       if (response.success) {
-        if (formData.imagesData && Object.keys(formData.imagesData).length > 0) {
-          const imageArray = getImagesArrayWithoutNulls(formData.imagesData);
+        if (formData.images && Object.keys(formData.images).length > 0) {
+          const imageArray = getImagesArrayWithoutNulls(formData.images);
           await Promise.all(
             imageArray.map(async (image) => {
               const body = JSON.stringify({
@@ -642,9 +584,9 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
           }
         }
 
-        if (formData.filesData && formData.filesData.length > 0) {
+        if (formData.files && formData.files.length > 0) {
           await Promise.all(
-            formData.filesData.map(async (file) => {
+            formData.files.map(async (file) => {
               const body = JSON.stringify({
                 special_plate_uid: response.data.uid,
                 file_url: file.url,
@@ -661,7 +603,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
           )
         }
 
-        const unusedFiles = fileImportDataList.filter((file) => !formData.filesData.find((f) => f.url === file.url));
+        const unusedFiles = fileImportDataList.filter((file) => !formData.files.find((f) => f.url === file.url));
         if (unusedFiles.length > 0) {
           await deleteImportData(unusedFiles);
         }
@@ -726,7 +668,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
       const status = data.active_status === 1 ? true : false;
 
       const body = JSON.stringify({
-        id: selectedRow.id,
+        uid: selectedRow.uid,
         ...(
           data.plate_group !== selectedRow.plate_prefix && { plate_prefix: data.plate_group }
         ),
@@ -758,6 +700,9 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
           data.case_owner_phone && data.case_owner_phone.replaceAll("-", "").slice(0, 10) !== selectedRow.case_owner_phone && { case_owner_phone: data.case_owner_phone.replaceAll("-", "").slice(0, 10) }
         ),
         ...(
+          selectedCheckpointObjects.filter(c => c.value !== "center").map(c => c.value) !== selectedRow.sync_uid_list_name.map(c => c.uid) && { sync_uid_list: selectedCheckpointObjects.filter(c => c.value !== "center").map(c => c.value) }
+        ),
+        ...(
           status !== selectedRow.active && { active: status }
         ),
       })
@@ -771,8 +716,8 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
       })
 
       if (isImageChanged) {
-        const imageArray = getImagesArrayWithoutNulls(formData.imagesData);
-        const oldImageArray = selectedRow?.imagesData ?? [];
+        const imageArray = getImagesArrayWithoutNulls(formData.images);
+        const oldImageArray = selectedRow?.images ?? [];
         const { added, removed } = getFilesDiff(imageArray, oldImageArray);
 
         if (removed.length > 0) {
@@ -809,7 +754,7 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
       }
 
       if (isFileChanged) {
-        const { added, removed } = getFilesDiff(formData.filesData, selectedRow?.filesData ?? []);
+        const { added, removed } = getFilesDiff(formData.files, selectedRow?.files ?? []);
 
         if (removed.length > 0) {
           await fetchClient<SpecialPlateResponse>(combineURL(CENTER_API, `/special-plate-files/delete`), {
@@ -861,12 +806,12 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
     const status = selectedRow?.active ? 1 : 0;
     const isOnlyStatusChanged = formData.active_status !== status;
 
-    const imageArray = getImagesArrayWithoutNulls(formData.imagesData).map((image) => image.url);
-    const oldImageArray = selectedRow?.imagesData?.map((image) => image.url) ?? [];
+    const imageArray = getImagesArrayWithoutNulls(formData.images).map((image) => image.url);
+    const oldImageArray = selectedRow?.images?.map((image) => image.image_url) ?? [];
     const isImageChanged = JSON.stringify(imageArray) !== JSON.stringify(oldImageArray);
 
-    const fileArray = getImagesArrayWithoutNulls(formData.filesData).map((file) => file.url);
-    const oldFileArray = selectedRow?.filesData?.map((file) => file.url) ?? [];
+    const fileArray = getImagesArrayWithoutNulls(formData.files).map((file) => file.url);
+    const oldFileArray = selectedRow?.files?.map((file) => file.file_url) ?? [];
     const isFileChanged = JSON.stringify(fileArray) !== JSON.stringify(oldFileArray);
 
     const arrest_warrant_date = selectedRow?.arrest_warrant_date ? dayjs(selectedRow.arrest_warrant_date).format("YYYY-MM-DD") : null
@@ -882,7 +827,8 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
       formData.behavior !== selectedRow?.behavior ||
       formData.case_number !== selectedRow?.case_number ||
       new_arrest_warrant_date !== arrest_warrant_date ||
-      new_arrest_warrant_expire_date !== arrest_warrant_expire_date
+      new_arrest_warrant_expire_date !== arrest_warrant_expire_date ||
+      selectedCheckpointObjects.map(c => c.value) !== selectedRow.sync_uid_list_name.map(c => c.uid)
 
     const statusChangeOnly = isOnlyStatusChanged && !isImageChanged && !isFileChanged && !isOtherDataChanged;
 
@@ -918,9 +864,10 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
       behavior: "",
       case_owner_name: ownerName,
       case_owner_phone: ownerPhone,
-      imagesData: {},
-      filesData: [],
+      images: {},
+      files: [],
       active_status: 0,
+      sync_uid_list: [],
     });
     setValue("plate_group", "");
     setValue("plate_number", "");
@@ -936,21 +883,21 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
   const handleCheckpointChange = (ids: string[]) => {
     let newIds: string[];
 
-    if (ids.length === 0 || ids.includes("0")) {
-      newIds = ["0"];
+    if (ids.length === 0) {
+      newIds = ["center"];
     } 
     else {
       newIds = ids;
     }
 
+    if (!ids.includes("center")) {
+      newIds.unshift("center");
+    }
+
     const selectedObjects = checkpointOption.filter(c => newIds.includes(c.value));
     setSelectedCheckpointObjects(selectedObjects);
 
-    const hasAll = selectedObjects.some((v) => v.value === "0");
-    
-    const finalCheckpoints = hasAll
-      ? checkpointOption.filter(c => c.value !== "0")
-      : selectedObjects;
+    const finalCheckpoints = selectedObjects;
 
     setFormData(prev => ({
       ...prev,
@@ -1261,20 +1208,20 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
                   <label
                     className="relative flex items-center justify-center w-full h-[250px] mt-[5px] bg-[#48494B] cursor-pointer overflow-hidden hover:bg-gray-800"
                   >
-                    { formData.imagesData && Object.keys(formData.imagesData).length > 0 ? (
+                    { formData.images && Object.keys(formData.images).length > 0 ? (
                       <div className="relative w-full h-full">
                         {/* First Image (Full Size) */}
-                        {formData.imagesData[0] && (
+                        {formData.images[0] && (
                           <div className="absolute inset-0">
                             <img
-                              src={`${CENTER_FILE_URL}${formData.imagesData[0].url}`}
+                              src={`${CENTER_FILE_URL}${formData.images[0].url}`}
                               alt="Uploaded 1"
                               className="object-contain w-full h-full"
                             />
                             <button
                               type="button"
                               className="absolute z-52 top-2 right-2 text-white bg-red-500 rounded-full w-[30px] h-[30px] flex items-center justify-center hover:cursor-pointer"
-                              onClick={() => handleDeleteImage(0, formData.imagesData[0])}
+                              onClick={() => handleDeleteImage(0, formData.images[0])}
                             >
                               &times;
                             </button>
@@ -1285,20 +1232,20 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
                         <div className="absolute bottom-2 left-2 flex gap-2">
                           {[1, 2].map(
                             (position) =>
-                              formData.imagesData[position] && (
+                              formData.images[position] && (
                                 <div
                                   key={position}
                                   className="relative w-20 h-[60px] border border-white bg-tuna"
                                 >
                                   <img
-                                    src={`${CENTER_FILE_URL}${formData.imagesData[position].url}`}
+                                    src={`${CENTER_FILE_URL}${formData.images[position].url}`}
                                     alt={`Uploaded ${position + 1}`}
                                     className="object-contain w-full h-full"
                                   />
                                   <button
                                     type="button"
                                     className="absolute z-52 top-[-5px] right-[-5px] text-white bg-red-500 rounded-full w-5 h-5 flex items-center justify-center hover:cursor-pointer"
-                                    onClick={() => handleDeleteImage(position, formData.imagesData[position])}
+                                    onClick={() => handleDeleteImage(position, formData.images[position])}
                                   >
                                     &times;
                                   </button>
@@ -1362,14 +1309,14 @@ const ManageSpecialPlate: React.FC<ManageSpecialPlateProps> = ({open, onClose, s
                 <div id="file-list-part" className="mt-[15px]">
                   <table className="w-full">
                     <tbody>
-                      {formData.filesData && formData.filesData.length > 0 ? (
-                        formData.filesData.map((file, index) => (
+                      {formData.files && formData.files.length > 0 ? (
+                        formData.files.map((file, index) => (
                           <tr
                             key={`${file.title}-${index}`}
                             className={`h-10 ${
                               index % 2 === 0 ? "bg-swamp" : "bg-celtic"
                             } ${
-                              index === formData.filesData.length - 1
+                              index === formData.files.length - 1
                                 ? "border-b border-white"
                                 : "border-b border-dashed border-gray-300"
                             }`}

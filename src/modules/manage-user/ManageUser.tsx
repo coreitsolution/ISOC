@@ -143,7 +143,7 @@ const ManageUser: React.FC<ManageUserProps> = ({}) => {
         checkpointUid: "",
       });
       setValue("checkpointUid", "");
-      fetchUsers(1, rowsPerPage, `deleted=false,${isCenter ? "owner=center" : "owner=checkpoint"}`);
+      fetchUsers(1, rowsPerPage, `deleted=false,${isCenter ? "center_uid!=null" : "checkpoint_uid!=null"}`);
       setPage(1);
     }
   }, [location.state]);
@@ -185,7 +185,7 @@ const ManageUser: React.FC<ManageUserProps> = ({}) => {
 
   useEffect(() => {
     if (userPermission && isCenter) {
-      fetchUsers(page, rowsPerPage, `deleted=false,${isCenter ? "owner=center" : "owner=checkpoint"}`);
+      fetchUsers(page, rowsPerPage, `deleted=false,${isCenter ? "center_uid!=null" : "checkpoint_uid!=null"}`);
       const options = userPermission.map((row) => ({
         label: reformatString(row.group_name),
         value: row.id,
@@ -291,7 +291,7 @@ const ManageUser: React.FC<ManageUserProps> = ({}) => {
         queryParams: {
           page: currentPage.toString(),
           limit: limit.toString(),
-          filter: `deleted=false,${isCenter ? "owner=center" : "owner=checkpoint"}`
+          filter: `deleted=false,${isCenter ? "center_uid!=null" : "checkpoint_uid!=null"}`
         }
       })
 
@@ -428,7 +428,7 @@ const ManageUser: React.FC<ManageUserProps> = ({}) => {
       };
 
       PopupMessage(t('message.success.delete-success'), "", "success");
-      fetchUsers(1, rowsPerPage, `deleted=false,${isCenter ? "owner=center" : "owner=checkpoint"}`);
+      fetchUsers(1, rowsPerPage, `deleted=false,${isCenter ? "center_uid!=null" : "checkpoint_uid!=null"}`);
     }
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -619,7 +619,7 @@ const ManageUser: React.FC<ManageUserProps> = ({}) => {
       filterParts.push(`checkpoint_uid=${formData.checkpointUid}`);
     }
 
-    filterParts.push(isCenter ? "owner=center" : "owner=checkpoint");
+    filterParts.push(isCenter ? "center_uid!=null" : "checkpoint_uid!=null");
     filterParts.push(`deleted=false`);
 
     await fetchUsers(currentPage, limit, filterParts.join(","));

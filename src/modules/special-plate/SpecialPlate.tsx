@@ -54,12 +54,9 @@ import {
   SpecialPlateResponse, 
   SpecialPlate, 
   SpecialPlateFilesResponse, 
-  FileDataResponse, 
-  ImageDataResponse,
   CheckpointResponse, 
+  Checkpoint,
   ZipDownloadResponse,
-  FileDataDetail,
-  ImageDataDetail,
 } from "../../features/types";
 
 dayjs.extend(buddhistEra)
@@ -82,6 +79,14 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
   // Data
   const [specialPlateList, setSpecialPlateList] = useState<SpecialPlate[]>([]);
   const [selectedRow, setSelectedRow] = useState<SpecialPlate | null>(null);
+  const [searchFilter, setSearchFilter] = useState<FormData>({
+    plate_group: "",
+    plate_number: "",
+    region_code: "",
+    plate_type: 0,
+    status: 2,
+    checkpoint_uid: [],
+  });
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -102,37 +107,75 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
 
   useEffect(() => {
     fetchSpecialPlates(page, rowsPerPage);
+
+    return () => {
+      setSearchFilter({
+        plate_group: "",
+        plate_number: "",
+        region_code: "",
+        plate_type: 0,
+        status: 2,
+        checkpoint_uid: [],
+      });
+    }
   }, [])
 
-  const fetchSpecialPlates = async (page: number, limit: number, filter?: string) => {
+  const fetchSpecialPlates = async (page: number, limit: number, sf?: FormData) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const searchData = sf ? sf : searchFilter;
+    let syncUidList: string[] = [];
+    const hasValidCheckpoint =
+      searchData.checkpoint_uid.length > 0 &&
+      searchData.checkpoint_uid[0] !== "0";
+
+    if (hasValidCheckpoint) {
+      const notCenter = searchData.checkpoint_uid.filter(c => c !== "center");
+
+      syncUidList = [...notCenter];
+    } 
+
+    const includeCenter = searchData.checkpoint_uid.includes("center");
+
     try {
       setIsLoading(true);
-      const response = await fetchClient<SpecialPlateResponse>(combineURL(CENTER_API, "/special-plates/get"), {
+      const response = await fetchClient<SpecialPlateResponse>(combineURL(CENTER_API, "/special-plates/search"), {
         method: "GET",
         signal: controller.signal,
         queryParams: {
           page: page.toString(),
           limit: limit.toString(),
-          ...(filter ? { filter } : {filter: "deleted=false"})
+          ...(syncUidList?.length && { sync_uid_list: syncUidList.join(",") }),
+          ...(searchData.plate_group?.trim() !== "" && { plate_prefix: searchData.plate_group }),
+          ...(searchData.plate_number?.trim() !== "" && { plate_number: searchData.plate_number }),
+          ...(searchData.region_code?.trim() !== "" && { region_code: searchData.region_code }),
+          ...(searchData.plate_type !== 0 && { plate_class_id: searchData.plate_type.toString() }),
+          ...(searchData.status !== 2 && { active: searchData.status.toString() }),
+          include_center:  includeCenter.toString(),
         }
       })
 
       if (response.success) {
+        const checkpointList = await fetchAllCheckpoint();
         const updated = await Promise.all(
           response.data.map(async (data) => {
-            const [imagesData, filesData, checkpoint_name] = await Promise.all([
-              fetchSpecialPlateImages(data.uid),
-              fetchSpecialPlateFiles(data.uid),
-              fetchCheckpointInfo(data.checkpoint_uid),
-            ]);
+            const checkpoint = checkpointList.find(c => c.uid === data.checkpoint_uid);
+            const checkpoint_name = checkpoint ? checkpoint.checkpoint_name : "";
+
+            let sync_uid_list = data.sync_uid_list.map((sync_uid) => {
+              const checkpoint = checkpointList.find(c => c.uid === sync_uid);
+              return {
+                uid: sync_uid,
+                name: checkpoint ? checkpoint.checkpoint_name : t('text.center'),
+              };
+            })
+
+            sync_uid_list.unshift({name: t('dropdown.center'), uid: "center"});
 
             return {
               ...data,
-              imagesData,
-              filesData,
-              checkpoint_name,
+              checkpoint_name: data.checkpoint_uid ? checkpoint_name : t('text.center'),
+              sync_uid_list_name: sync_uid_list,
             };
           })
         );
@@ -154,88 +197,60 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
     }
   }
 
-  const fetchSpecialPlateImages = async (uid: string) => {
+  // const fetchCheckpointInfo = async (checkpoint_uid: string) => {
+  //   const controller = new AbortController();
+  //   const timeoutId = setTimeout(() => controller.abort(), 10000);
+  //   let checkpoint_name = "";
+  //   try {
+  //     const response = await fetchClient<CheckpointResponse>(combineURL(CENTER_API, "/checkpoints/get"), {
+  //       method: "GET",
+  //       signal: controller.signal,
+  //       queryParams: { 
+  //         filter: `uid:${checkpoint_uid}`
+  //       },
+  //     });
+
+  //     if (response.data && response.data.length > 0) {
+  //       checkpoint_name = response.data[0].checkpoint_name;
+  //     }
+  //   } 
+  //   catch (error) {
+  //     const errorMessage = error instanceof Error ? error.message : String(error)
+  //     PopupMessage(t('message.error.error-while-fetching-image'), errorMessage, "error");
+  //     checkpoint_name = "";
+  //   }
+  //   finally {
+  //     clearTimeout(timeoutId);
+  //   }
+  //   return checkpoint_name;
+  // }
+
+  const fetchAllCheckpoint = async () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
-    let imagesData: ImageDataDetail[] = [];
-    try {
-      const response = await fetchClient<ImageDataResponse>(combineURL(CENTER_API, "/special-plate-images/get"), {
-        method: "GET",
-        signal: controller.signal,
-        queryParams: {
-          filter: `special_plate_uid=${uid}`
-        }
-      })
-
-      if (response.success) {
-        imagesData = response.data;
-      }
-    }
-    catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      PopupMessage(t('message.error.error-while-fetching-image'), errorMessage, "error");
-      imagesData = [];
-    }
-    finally {
-      clearTimeout(timeoutId);
-    }
-    return imagesData;
-  }
-
-  const fetchSpecialPlateFiles = async (uid: string) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    let filesData: FileDataDetail[] = [];
-    try {
-      const response = await fetchClient<FileDataResponse>(combineURL(CENTER_API, "/special-plate-files/get"), {
-        method: "GET",
-        signal: controller.signal,
-        queryParams: {
-          filter: `special_plate_uid=${uid}`
-        }
-      })
-
-      if (response.success) {
-        filesData = response.data;
-      }
-    }
-    catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      PopupMessage(t('message.error.error-while-fetching-image'), errorMessage, "error");
-      filesData = [];
-    }
-    finally {
-      clearTimeout(timeoutId);
-    }
-    return filesData;
-  }
-
-  const fetchCheckpointInfo = async (checkpoint_uid: string) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    let checkpoint_name = "";
+    let checkpointList: Checkpoint[] = [];
     try {
       const response = await fetchClient<CheckpointResponse>(combineURL(CENTER_API, "/checkpoints/get"), {
         method: "GET",
         signal: controller.signal,
         queryParams: { 
-          filter: `uid:${checkpoint_uid}`
+          filter: `deleted=false`
         },
       });
 
       if (response.data && response.data.length > 0) {
-        checkpoint_name = response.data[0].checkpoint_name;
+        checkpointList = response.data;
       }
     } 
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       PopupMessage(t('message.error.error-while-fetching-image'), errorMessage, "error");
-      checkpoint_name = "";
+      checkpointList = [];
     }
     finally {
       clearTimeout(timeoutId);
     }
-    return checkpoint_name;
+    return checkpointList;
   }
 
   const handleImportMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -416,43 +431,8 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
   }
 
   const handleSearch = async (searchFilter: FormData) => {
-    const filterParts = [];
-
-    if (searchFilter.plate_group.trim() !== "") {
-      filterParts.push(`plate_prefix~${searchFilter.plate_group}`);
-    }
-    if (searchFilter.plate_number.trim() !== "") {
-      filterParts.push(`plate_number~${searchFilter.plate_number}`);
-    }
-    if (searchFilter.region_code.trim() !== "") {
-      filterParts.push(`region_code~${searchFilter.region_code}`);
-    }
-    if (searchFilter.checkpoint_uid.length > 0 && searchFilter.checkpoint_uid[0] !== "0") {
-      const mapped = searchFilter.checkpoint_uid.map(c => c === "center" ? "null" : c);
-
-      const nonNull = mapped.filter(c => c !== "null");
-
-      let checkpointFilter = "";
-
-      if (nonNull.length > 0) {
-        checkpointFilter += `checkpoint_uid=${nonNull.join("|")}`;
-      }      
-
-      if (mapped.includes("null")) {
-        checkpointFilter += (checkpointFilter ? "||" : "") + `checkpoint_uid=null`;
-      }
-      filterParts.push(`${checkpointFilter}`);
-    }
-    if (searchFilter.plate_type !== 0) {
-      filterParts.push(`plate_class_id=${searchFilter.plate_type}`);
-    }
-    if (searchFilter.status !== 2) {
-      filterParts.push(`active=${searchFilter.status}`);
-    }
-
-    filterParts.push(`deleted=false`);
-
-    await fetchSpecialPlates(1, rowsPerPage, filterParts.join(','));
+    setSearchFilter(searchFilter);
+    await fetchSpecialPlates(1, rowsPerPage, searchFilter);
   }
 
   const handleAddSpecialPlateClick = () => {
@@ -584,12 +564,16 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
                           <TableCell sx={{ backgroundColor: "#393B3A", color: "#FFFFFF", height: "83px" }}>{data.checkpoint_uid ? data.checkpoint_name : t('text.center')}</TableCell>
                           <TableCell sx={{ backgroundColor: "#48494B", color: "#FFFFFF", height: "83px", padding: "0 5px 0 5px" }}>
                             {
-                              data.checkpoint_name ? (
-                                <div className='flex items-center'>
-                                  <span className='mr-2 text-[10px]'>&#8226;</span>
-                                  {data.checkpoint_name}
-                                </div>
-                              ) : 
+                              data.sync_uid_list_name.length > 0 ? 
+                              data.sync_uid_list_name.map((uid) => {
+                                return (
+                                  <div className='flex items-center'>
+                                    <span className='mr-2 text-[10px]'>&#8226;</span>
+                                    {uid.name}
+                                  </div>
+                                )
+                              })
+                              : 
                               "-"
                             }
                           </TableCell>
@@ -609,16 +593,17 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
                           }
                           <TableCell align="center" sx={{ backgroundColor: "#48494B", padding: "6px", height: "83px" }}>
                             {
-                              Array.isArray(data.imagesData) && data.imagesData.length > 0 ? 
+                              Array.isArray(data.images) && data.images.length > 0 ? 
                               (
                                 <div className='flex items-center justify-center space-x-1'>
                                   {
-                                    data.imagesData.map((image, index) => (
+                                    data.images.map((image, index) => (
                                       <Image
                                         key={index}
-                                        imageSrc={`${CENTER_FILE_URL}${image.url}`} 
+                                        imageSrc={`${CENTER_FILE_URL}${image.image_url}`} 
                                         imageAlt={`image-${index}`}
-                                        className="inline-flex items-center justify-center align-middle h-[70px] w-[70px]" 
+                                        className="inline-flex items-center justify-center align-middle h-[70px] w-[70px]"
+                                        backgroundColor='transparent' 
                                       />
                                     ))
                                   }
@@ -655,7 +640,7 @@ const SpecialPlatePage: React.FC<SpecialPlateProps> = ({}) => {
                           </TableCell>
                           {
                             (() => {
-                              const isFilesDataExist = Array.isArray(data.filesData) && data.filesData.length > 0;
+                              const isFilesDataExist = Array.isArray(data.files) && data.files.length > 0;
                               return (
                                 <TableCell align="center" sx={{ backgroundColor: "#393B3A", color: "#FFFFFF", height: "83px", padding: "4px" }}>
                                   <IconButton

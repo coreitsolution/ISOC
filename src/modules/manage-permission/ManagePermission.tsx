@@ -82,12 +82,13 @@ const ManagePermission: React.FC<ManagePermissionProps> = ({open, onClose, isCen
     "conditionSearch",
     // "beforeAfterSearch",
     "specialPlateManage",
+    "suspectPersonManage",
+    "suspectPersonSearch",
     // "specialPlateSearch",
     // "executiveReport",
     "manageUser",
     "setting",
     "manageCheckpointCameras",
-    "chart",
   ];
   const checkpointKeys: CheckpointPermissionsKey[] = [
     "realtime",
@@ -113,6 +114,12 @@ const ManagePermission: React.FC<ManagePermissionProps> = ({open, onClose, isCen
     //   select: false,
     // },
     specialPlateManage: {
+      select: false,
+    },
+    suspectPersonManage: {
+      select: false,
+    },
+    suspectPersonSearch: {
       select: false,
     },
     // specialPlateSearch: {
@@ -169,9 +176,6 @@ const ManagePermission: React.FC<ManagePermissionProps> = ({open, onClose, isCen
     manageCheckpointCameras: {
       name: t('text.ct-checkpoint-cameras'),
     },
-    chart: {
-      name: t('text.ct-chart'),
-    }
   };
 
   const DEFAULT_CHECKPOINT_PERMISSION = {
@@ -200,16 +204,16 @@ const ManagePermission: React.FC<ManagePermissionProps> = ({open, onClose, isCen
       name: t('text.cp-real-time'),
     },
     // suspiciousPersonManage: {
-    //   name: t('text.cp-special-plate-search'),
+    //   name: t('text.cp-suspicious-person-search'),
     // },
     // suspiciousPersonSearch: {
-    //   name: t('text.cp-special-plate-manage'),
+    //   name: t('text.cp-suspicious-person-manage'),
     // },
     specialPlateManage: {
-      name: t('text.cp-suspicious-person-search'),
+      name: t('text.cp-special-plate-search'),
     },
     specialPlateSearch: {
-      name: t('text.cp-suspicious-person-manage'),
+      name: t('text.cp-special-plate-manage'),
     },
     setting: {
       name: t('text.cp-setting'),

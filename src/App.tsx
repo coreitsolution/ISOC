@@ -81,7 +81,7 @@ import RequestDeleteCameraAlert from './components/request-delete-camera-alert/R
 import ProtectedRoute from './components/protected-route/ProtectedRoute';
 import CameraStatusPopup from './components/camera-status-popup/CameraStatusPopup';
 import Watermark from "./components/watermark/WaterMark";
-import LicenseExpirePopup from './components/license-expire-popup/LicenseExpirePopup';
+// import LicenseExpirePopup from './components/license-expire-popup/LicenseExpirePopup';
 
 // Config
 import { getUrls } from './config/runtimeConfig';
@@ -489,21 +489,21 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  const handleLicenseExpire = (message: any) => {
-    createNotificationToast({
-      dispatch,
-      type: "licenseExpire",
-      component: LicenseExpirePopup,
-      content: t("text.license-expire"),
-      messageId: message.timestampUtc,
-      style: {
-        minHeight: "130px",
-        maxHeight: "130px",
-      },
-      closeAction: "closeRequestDeleteCameraAlert",
-      id: message.id
-    });
-  }
+  // const handleLicenseExpire = (message: any) => {
+  //   createNotificationToast({
+  //     dispatch,
+  //     type: "licenseExpire",
+  //     component: LicenseExpirePopup,
+  //     content: t("text.license-expire"),
+  //     messageId: message.timestampUtc,
+  //     style: {
+  //       minHeight: "130px",
+  //       maxHeight: "130px",
+  //     },
+  //     closeAction: "closeRequestDeleteCameraAlert",
+  //     id: message.id
+  //   });
+  // }
 
   const fetchNotification = async () => {
     const controller = new AbortController();

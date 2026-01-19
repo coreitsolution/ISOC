@@ -332,7 +332,6 @@ export interface CenterPermissions {
   specialPlateManage: PermissionDetail;
   suspectPersonManage: PermissionDetail;
   suspectPersonSearch: PermissionDetail;
-  center: PermissionDetail;
   manageUser: PermissionDetail;
   setting: PermissionDetail;
   manageCheckpointCameras: PermissionDetail;

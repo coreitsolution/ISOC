@@ -23,6 +23,11 @@ export const mockSpecialPlates: SpecialPlate [] = [
     "updated_at": "2025-07-21T07:58:20.203Z",
     "uid": "",
     "checkpoint_uid": "",
+    center_uid: "",
+    sync_uid_list: [],
+    sync_uid_list_name: [],
+    images: [],
+    files: [],
   },
   {
     "id": 45,
@@ -46,5 +51,10 @@ export const mockSpecialPlates: SpecialPlate [] = [
     "updated_at": "2025-07-21T07:58:20.203Z",
     "uid": "",
     "checkpoint_uid": "",
+    center_uid: "",
+    sync_uid_list: [],
+    sync_uid_list_name: [],
+    images: [],
+    files: [],
   },
 ];
