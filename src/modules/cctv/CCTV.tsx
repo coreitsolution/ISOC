@@ -576,8 +576,8 @@ const CCTV = () => {
                                       <p className='truncate' title={`${reformatString(streamLPRData.vehicle_color)}`}>{reformatString(streamLPRData.vehicle_color)}</p>
                                     </div>
                                     <div>
-                                      <p>{dayjs(lprData.epoch_end).format(i18n.language === "th" ? "DD-MM-BBBB" : 'DD-MM-YYYY')}</p>
-                                      <p>{dayjs(lprData.epoch_end).format('HH:mm:ss')}</p>
+                                      <p>{dayjs(streamLPRData.epoch_end).format(i18n.language === "th" ? "DD-MM-BBBB" : 'DD-MM-YYYY')}</p>
+                                      <p>{dayjs(streamLPRData.epoch_end).format('HH:mm:ss')}</p>
                                     </div>
                                   </div>
                                 </div>
