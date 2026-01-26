@@ -465,7 +465,7 @@ const CCTV = () => {
                 const liveViewWithLPR = cameraDetailSettingData
                   .slice(0, selectedScreenValue)
                   .map((live, index) => ({
-                    lprData: (activeStreamUrls[index] && activeStreamUrls[index].id && streamLPRMapping[activeStreamUrls[index].id]) || streamLPRMapping[live.alpr_camera_id] || null,
+                    lprData: (activeStreamUrls[index] && activeStreamUrls[index].id && streamLPRMapping[activeStreamUrls[index].id]) || streamLPRMapping[live.uid] || null,
                     isLPRIncluded: index < lprCount,
                   }));
 
