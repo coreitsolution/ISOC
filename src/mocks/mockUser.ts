@@ -47,6 +47,9 @@ export const mockUsers: User[] = Array.from({ length: 5 }, (_, index) => ({
       chart: {
         select: true,
       },
+      settingFace: {
+        select: true,
+      },
     },
     checkpoint: {
       realtime: {

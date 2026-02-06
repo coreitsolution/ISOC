@@ -27,6 +27,7 @@ import CarIcon from "../../assets/icons/car-front.png";
 import BaseMap, { BaseMapRef } from '../../components/base-map/BaseMap';
 import TextBox from '../../components/text-box/TextBox';
 import AutoComplete from '../../components/auto-complete/AutoComplete';
+import Image from '../../components/image/Image';
 
 // Types
 import { 
@@ -622,9 +623,19 @@ const LocationDetail: React.FC<LocationDetailProps> = ({
                         
                         {/* Image */}
                         <div className='flex items-center justify-center h-40 bg-black border-b border-[#384043]'>
-                          <div className='h-40 w-[60%] relative'>
-                            <img src={`${CENTER_FILE_URL}${data.vehicle_image_url}`} alt='Vehicle Image' className='h-full w-full' />
-                            <img src={`${CENTER_FILE_URL}${data.plate_image_url}`} alt='Plate Image' className='h-[30%] w-[100px] absolute bottom-0 left-0' />
+                          <div className='flex items-center justify-center h-full w-[60%] relative'>
+                            <Image 
+                              imageSrc={`${CENTER_FILE_URL}${data.vehicle_image_url}`}
+                              imageAlt={"Vehicle Image"}
+                              className="h-[97%] w-full"
+                              isWithOutDiv={true}
+                            />
+                            <Image 
+                              imageSrc={`${CENTER_FILE_URL}${data.plate_image_url}`}
+                              imageAlt={"Plate Image"}
+                              className="h-[30%] w-[100px] absolute bottom-0 left-0"
+                              isWithOutDiv={true}
+                            />
                           </div>
                         </div>
                         
@@ -720,9 +731,19 @@ const LocationDetail: React.FC<LocationDetailProps> = ({
 
                           {/* Image */}
                           <div className='flex items-center justify-center h-40 bg-black border-b border-[#384043]'>
-                            <div className='h-40 w-[60%] relative'>
-                              <img src={`${CENTER_FILE_URL}${data.vehicle_image_url}`} alt="Vehicle Image" className='h-full w-full' />
-                              <img src={`${CENTER_FILE_URL}${data.plate_image_url}`} alt="Plate Image" className='h-[30%] w-[100px] absolute bottom-0 left-0' />
+                            <div className='flex items-center justify-center h-full w-[60%] relative'>
+                              <Image 
+                                imageSrc={`${CENTER_FILE_URL}${data.vehicle_image_url}`}
+                                imageAlt={"Vehicle Image"}
+                                className="h-[97%] w-full"
+                                isWithOutDiv={true}
+                              />
+                              <Image 
+                                imageSrc={`${CENTER_FILE_URL}${data.plate_image_url}`}
+                                imageAlt={"Plate Image"}
+                                className="h-[30%] w-[100px] absolute bottom-0 left-0"
+                                isWithOutDiv={true}
+                              />
                             </div>
                           </div>
                           {/* Plate Detail */}
@@ -991,9 +1012,19 @@ const LocationDetail: React.FC<LocationDetailProps> = ({
 
                           {/* Image */}
                           <div className='flex items-center justify-center h-[180px] bg-black border-b border-[#384043]'>
-                            <div className='h-[180px] py-2 w-[60%] relative'>
-                              <img src={`${CENTER_FILE_URL}${data.vehicle_image_url}`} alt="Vehicle Image" className='h-full w-full' />
-                              <img src={`${CENTER_FILE_URL}${data.plate_image_url}`} alt="Plate Image" className='h-[30%] w-[100px] absolute bottom-2 left-0' />
+                            <div className='flex items-center justify-center h-[180px] py-2 w-[60%] relative'>
+                              <Image 
+                                imageSrc={`${CENTER_FILE_URL}${data.vehicle_image_url}`}
+                                imageAlt={"Vehicle Image"}
+                                className="h-full w-full"
+                                isWithOutDiv={true}
+                              />
+                              <Image 
+                                imageSrc={`${CENTER_FILE_URL}${data.plate_image_url}`}
+                                imageAlt={"Plate Image"}
+                                className="h-[30%] w-[100px] absolute bottom-2 left-0"
+                                isWithOutDiv={true}
+                              />
                             </div>
                           </div>
                           <div className='flex flex-col mt-2.5 space-y-3'>

@@ -75,6 +75,7 @@ const ManageUserGroup: React.FC<ManageUserGroupProps> = ({open, onClose, user, s
     "manageUser",
     "setting",
     "manageCheckpointCameras",
+    "settingFace",
   ];
   const checkpointKeys: CheckpointPermissionsKey[] = [
     "realtime",
@@ -129,7 +130,10 @@ const ManageUserGroup: React.FC<ManageUserGroupProps> = ({open, onClose, user, s
     },
     chart: {
       select: false,
-    }
+    },
+    settingFace: {
+      select: false,
+    },
   };
 
   const DEFAULT_CENTER_PERMISSION_NAME = {
@@ -168,7 +172,10 @@ const ManageUserGroup: React.FC<ManageUserGroupProps> = ({open, onClose, user, s
     },
     chart: {
       name: t('text.ct-chart'),
-    }
+    },
+    settingFace: {
+      name: t('text.ct-setting-face'),
+    },
   };
 
   const DEFAULT_CHECKPOINT_PERMISSION = {

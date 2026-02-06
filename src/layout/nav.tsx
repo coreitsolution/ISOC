@@ -103,12 +103,12 @@ function Nav() {
   const navItems = [
     ...(
       authData?.userInfo?.permissions?.center?.realtime?.select
-        ? [{ path: "/center/real-time-monitor", icon: "checking", label: "real-time" }]
+        ? [{ path: "/center/real-time-monitor", icon: "checking", label: "real-time", title: t('screen.real-time.title') }]
         : []
     ),
     ...(
       authData?.userInfo?.permissions?.center?.conditionSearch?.select
-        ? [{ path: "/center/search-plate-with-condition", icon: "search-condition", label: "search-condition" }]
+        ? [{ path: "/center/search-plate-with-condition", icon: "search-condition", label: "search-condition", title: t('screen.search-plate-condition.title') }]
         : []
     ),
     ...(
@@ -118,6 +118,7 @@ function Nav() {
             path: "/center/special-plate",
             icon: "special-plate",
             label: "special-plate",
+            title: t('screen.manage-plate.title')
           }
         ]
         : []
@@ -129,6 +130,7 @@ function Nav() {
             path: "/center/suspect-people",
             icon: "order-detect-person",
             label: "suspect-person",
+            title: t('screen.manage-suspect-people.title')
           }
         ]
         : []
@@ -140,18 +142,36 @@ function Nav() {
             path: "/center/search-suspect-people",
             icon: "detect-person",
             label: "search-suspect-people",
+            title: t('screen.search-suspect-people.title')
           }
         ]
         : []
     ),
+    // ...(
+    //   authData?.userInfo?.permissions?.center?.multiDetectSearch?.select
+    //     ? [
+    //       {
+    //         path: "/center/search-multi-detect",
+    //         icon: "multi-detect",
+    //         label: "search-multi-detect",
+    //         title: t('screen.search-multi-detect.title')
+    //       }
+    //     ]
+    //     : []
+    // ),
     ...(
       authData?.userInfo?.permissions?.center?.manageUser?.select
-        ? [{ path: "/center/manage-user", icon: "add-user", label: "manage-user" }]
+        ? [{ path: "/center/manage-user", icon: "add-user", label: "manage-user", title: t('screen.manage-user.title') }]
         : []
     ),
     ...(
       authData?.userInfo?.permissions?.center?.setting?.select
-        ? [{ path: "/center/setting", icon: "settings", label: "settings" }]
+        ? [{ path: "/center/setting", icon: "settings", label: "settings", title: t('screen.setting.title') }]
+        : []
+    ),
+    ...(
+      authData?.userInfo?.permissions?.center?.settingFace?.select
+        ? [{ path: "/center/setting-face", icon: "settings-face", label: "setting-face", title: t('screen.setting-face.title') }]
         : []
     ),
     // ...(
@@ -384,6 +404,11 @@ function Nav() {
                 alt="User" 
                 className="w-11 h-11 bg-black rounded-full overflow-hidden" 
                 onClick={handleButtonClick}
+                onError={(e) => {
+                  const target = e.currentTarget
+                  target.onerror = null
+                  target.src = User
+                }}
               />
             </div>
             {
@@ -548,6 +573,7 @@ function Nav() {
                             menuName={item.label}
                             isActive={isActive}
                             isSubMenu={false}
+                            title={item.title}
                           />
                         </div>
                       );

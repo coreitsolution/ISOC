@@ -58,7 +58,10 @@
     "login": "Login",
     "add-new-suspect-person": "Add New Suspect",
     "add-new-suspect-person-width": "175px",
-    "download-template": "Download Template"
+    "download-template": "Download Template",
+    "vehicle": "Vehicle",
+    "face": "Face",
+    "object": "Object"
   },
   "accordion": {
     "search-condition": "Search Conditions"
@@ -71,7 +74,9 @@
   "dropdown": {
     "all-status": "All Status",
     "all": "All",
-    "center": "Center"
+    "center": "Center",
+    "lpr-all-text": "All LPR",
+    "face-all-text": "All Face"
   },
   "info": {
     "forgot-password": "Forgot Password",
@@ -129,6 +134,7 @@
     "location-latitude": "Location Latitude",
     "location-longitude": "Location Longitude",
     "camera-name": "Camera Name",
+    "camera-name-from-dss": "Camera Name (DSS)",
     "stream-encode": "Stream Encode",
     "api-server": "API Server",
     "rtsp-live-view": "RTSP Live View",
@@ -200,6 +206,7 @@
     "location-latitude": "Please input the location latitude",
     "location-longitude": "Please input the location longitude",
     "camera-name": "Please input the camera name",
+    "camera-name-from-dss": "Please input the camera name (DSS)",
     "stream-encode": "Please select the stream encode",
     "api-server": "Please input the API server",
     "rtsp-live-view": "Please input the RTSP live view",
@@ -278,6 +285,9 @@
     "setting": {
       "title": "Checkpoint/Camera Settings Information"
     },
+    "setting-face": {
+      "title": "Face Camera Settings Information"
+    },
     "camera-setting": {
       "add-title": "Add Camera",
       "edit-title": "Edit Camera"
@@ -296,6 +306,12 @@
     },
     "chart": {
       "title": "Statistical Data"
+    },
+    "realtime-setting": {
+      "title": "Setting"
+    },
+    "search-multi-detect": {
+      "title": "Search Multi Object"
     }
   },
   "feed-data": {
@@ -361,6 +377,7 @@
       "camera-location": "Location",
       "camera-detect": "Number of detections",
       "camera-sensor-setting": "Sensor Setting",
+      "camera-name": "Camera Name",
       "only-plate": "Plate",
       "province-category": "Province Category",
       "car-type": "Car Type",
@@ -429,6 +446,7 @@
     "ct-setting": "Checkpoint/Camera Settings Information",
     "ct-checkpoint-cameras": "Manage Checkpoint Camera Data",
     "ct-chart": "Statistical data",
+    "ct-setting-face": "Face Camera Settings Information",
     "cp-real-time": "Real-Time Vehicle Analysis System",
     "cp-special-plate-search": "Special Plate Search",
     "cp-special-plate-manage": "Special Plate Manage",
@@ -499,7 +517,11 @@
     "current-number-detections": "Current number of detections",
     "center": "Center",
     "license-expire": "License Expire",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "loading-map": "Loading map...",
+    "no-camera": "No Camera",
+    "image-size-detail": "Image size must not exceed 540 × 1080 pixels",
+    "detect": "Detect"
   },
   "alert": {
     "save-success": "Changes saved successfully",
@@ -521,7 +543,9 @@
     "car-route": "Vehicle Route",
     "delete-camera-approve": "Delete Camera Approve",
     "active-camera": "Active Camera",
-    "camera-tab-width": "400px"
+    "camera-tab-width": "400px",
+    "camera-list": "Camera List",
+    "real-time-camera": "Real-Time Camera"
   },
   "message": {
     "error": {
@@ -540,7 +564,11 @@
       "restart-engine-error": "Restart Engine error: {{error}}",
       "setting-camera-error": "Cannot create camera settings: {{error}}",
       "user-password-invalid": "Invalid username and/or password!",
-      "error-while-download-file": "An error occurred while downloading file."
+      "error-while-download-file": "An error occurred while downloading file.",
+      "must-select-at-least-one-camera": "Please select at least one camera.",
+      "image-size": "Image Size",
+      "image-size-detail": "Image size must not exceed 540 × 1080 pixels",
+      "error-delete-image": "An error occurred while deleting the image."
     },
     "success": {
       "save-success": "Save Successfully",
@@ -572,6 +600,9 @@
       "delete-approve": "Approve deletion of camera",
       "delete-unapprove": "Unapprove deletion of camera",
       "active-camera": "Bring the camera back to use"
+    },
+    "info": {
+      "can-not-select-camera-more-than-five": "Cannot select more than 5 cameras"
     }
   },
   "bread-crumb": {

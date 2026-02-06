@@ -217,16 +217,16 @@ export const fetchPrefixThunk = createAsyncThunk(
 
 export const fetchPersonTypesThunk = createAsyncThunk(
   "dropdown/fetchPersonTypes",
-  async () => {
-    const response = await fetchPersonTypes();
+  async (param?: Record<string, string>) => {
+    const response = await fetchPersonTypes(param);
     return response;
   }
 );
 
 export const fetchPlateTypesThunk = createAsyncThunk(
   "dropdown/fetchPlateTypes",
-  async () => {
-    const response = await fetchPlateTypes();
+  async (param?: Record<string, string>) => {
+    const response = await fetchPlateTypes(param);
     return response;
   }
 );

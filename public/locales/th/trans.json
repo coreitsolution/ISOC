@@ -58,7 +58,10 @@
     "login": "Login",
     "add-new-suspect-person": "เพิ่มบุคคลต้องสงสัย",
     "add-new-suspect-person-width": "180px",
-    "download-template": "ดาวน์โหลด Template"
+    "download-template": "ดาวน์โหลด Template",
+    "vehicle": "ยานพาหนะ",
+    "face": "ตรวจจับใบหน้า",
+    "object": "วัตถุ"
   },
   "accordion": {
     "search-condition": "เงื่อนไขการค้นหา"
@@ -71,7 +74,9 @@
   "dropdown": {
     "all-status": "ทุกสถานะ",
     "all": "ทั้งหมด",
-    "center": "Center"
+    "center": "Center",
+    "lpr-all-text": "LPR ทั้งหมด",
+    "face-all-text": "Face ทั้งหมด"
   },
   "info": {
     "forgot-password": "ลืมรหัสผ่าน",
@@ -129,6 +134,7 @@
     "location-latitude": "Location Latitude",
     "location-longitude": "Location Longitude",
     "camera-name": "ชื่อกล้อง",
+    "camera-name-from-dss": "ชื่อกล้อง (DSS)",
     "stream-encode": "Stream Encode",
     "api-server": "API Server",
     "rtsp-live-view": "RTSP Live View",
@@ -200,6 +206,7 @@
     "location-latitude": "กรุณาใส่ Location Latitude",
     "location-longitude": "กรุณาใส่ Location Longitude",
     "camera-name": "กรุณาใส่ชื่อกล้อง",
+    "camera-name-from-dss": "กรุณาใส่ชื่อกล้อง (DSS)",
     "stream-encode": "กรุณาเลือก Stream Encode",
     "api-server": "กรุณาใส่ API Server",
     "rtsp-live-view": "กรุณาใส่ RTSP Live View",
@@ -278,6 +285,9 @@
     "setting": {
       "title": "ข้อมูลการตั้งค่าด่าน/กล้อง"
     },
+    "setting-face": {
+      "title": "ข้อมูลการตั้งค่ากล้อง Face"
+    },
     "camera-setting": {
       "add-title": "เพิ่มกล้อง",
       "edit-title": "แก้ไขกล้อง"
@@ -296,6 +306,12 @@
     },
     "chart": {
       "title": "ข้อมูลสถิติ"
+    },
+    "realtime-setting": {
+      "title": "ตั้งค่า"
+    },
+    "search-multi-detect": {
+      "title": "ตรวจหาวัตถุต้องสงสัย"
     }
   },
   "feed-data": {
@@ -361,6 +377,7 @@
       "camera-location": "พิกัด",
       "camera-detect": "จำนวนที่ตรวจจับ",
       "camera-sensor-setting": "ตั้งค่าเซ็นเซอร์",
+      "camera-name": "ชื่อกล้อง",
       "only-plate": "ทะเบียน",
       "province-category": "หมวดจังหวัด",
       "car-type": "ประเภทรถ",
@@ -429,6 +446,7 @@
     "ct-setting": "ข้อมูลการตั้งค่าด่าน/กล้อง",
     "ct-checkpoint-cameras": "จัดการข้อมูลกล้อง Checkpoint",
     "ct-chart": "ข้อมูลสถิติ",
+    "ct-setting-face": "ข้อมูลการตั้งค่ากล้อง Face",
     "cp-real-time": "ระบบวิเคราะห์ยานพาหนะแบบ Real-Time",
     "cp-special-plate-search": "รายการทะเบียนรถที่ตรวจอ่านได้",
     "cp-special-plate-manage": "การจัดการรายการทะเบียนพิเศษ",
@@ -499,7 +517,12 @@
     "current-number-detections": "จำนวนตรวจจับได้ ณ ปัจจุบัน",
     "center": "Center",
     "license-expire": "License Expire",
-    "unknown": "ไม่ระบุ"
+    "unknown": "ไม่ระบุ",
+    "loading-map": "กำลังโหลดแผนที่...",
+    "select-camera-list": "รายการกล้องที่ถูกเลือก",
+    "no-camera": "ไม่มีวิดีโอ",
+    "image-size-detail": "ขนาดภาพต้องไม่เกิน 540 × 1080 พิกเซล",
+    "detect": "ตรวจจับได้"
   },
   "alert": {
     "save-success": "บันทึกการเปลี่ยนแปลงสำเร็จ",
@@ -521,7 +544,9 @@
     "car-route": "ข้อมูลขนส่ง",
     "delete-camera-approve": "อนุมัติลบกล้อง",
     "active-camera": "เปิดใช้กล้อง",
-    "camera-tab-width": "300px"
+    "camera-tab-width": "300px",
+    "camera-list": "รายการกล้อง",
+    "real-time-camera": "กล้อง Real-Time"
   },
   "message": {
     "error": {
@@ -540,7 +565,11 @@
       "restart-engine-error": "Restart Engine ผิดพลาด: {{error}}",
       "setting-camera-error": "ไม่สามารถสร้างการตั้งค่ากล้องได้: {{error}}",
       "user-password-invalid": "ชื่อผู้ใช้ และ/หรือ รหัสผ่านไม่ถูกต้อง!",
-      "error-while-download-file": "เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์"
+      "error-while-download-file": "เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์",
+      "must-select-at-least-one-camera": "กรุณาเลือกอย่างน้อย 1 ตัวกล้อง",
+      "image-size": "ขนาดรูปภาพ",
+      "image-size-detail": "ขนาดภาพต้องไม่เกิน 540 × 1080 พิกเซล",
+      "error-delete-image": "เกิดข้อผิดพลาดในการลบรูปภาพ"
     },
     "success": {
       "save-success": "บันทึกข้อมูลสำเร็จ",
@@ -572,6 +601,10 @@
       "delete-approve": "อนุมัติลบกล้อง",
       "delete-unapprove": "ไม่อนุมัติลบกล้อง",
       "active-camera": "นำกล้องกลับมาใช้อีกครั้ง"
+    },
+    "info": {
+      "can-not-select-camera-more-than-five": "ไม่สามารถเลือกกล้องได้เกิน 5 ตัว",
+      "camera-limit-exceeded": "จำนวนกล้องเกินลิมิต"
     }
   },
   "bread-crumb": {

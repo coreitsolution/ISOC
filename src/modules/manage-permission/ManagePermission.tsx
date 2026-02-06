@@ -89,6 +89,7 @@ const ManagePermission: React.FC<ManagePermissionProps> = ({open, onClose, isCen
     "manageUser",
     "setting",
     "manageCheckpointCameras",
+    "settingFace",
   ];
   const checkpointKeys: CheckpointPermissionsKey[] = [
     "realtime",
@@ -139,7 +140,10 @@ const ManagePermission: React.FC<ManagePermissionProps> = ({open, onClose, isCen
     },
     chart: {
       select: false,
-    }
+    },
+    settingFace: {
+      select: false,
+    },
   };
 
   const DEFAULT_CENTER_PERMISSION_NAME = {
@@ -175,6 +179,9 @@ const ManagePermission: React.FC<ManagePermissionProps> = ({open, onClose, isCen
     },
     manageCheckpointCameras: {
       name: t('text.ct-checkpoint-cameras'),
+    },
+    settingFace: {
+      name: t('text.ct-setting-face'),
     },
   };
 

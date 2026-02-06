@@ -9,7 +9,7 @@ import { RootState } from "../../app/store"
 import Image from '../image/Image';
 
 // Types
-import { RealTimeLprData, RealTimeFaceData } from '../../features/types';
+import { RealTimeLprData } from '../../features/types';
 
 // i18n
 import { useTranslation } from 'react-i18next';
@@ -22,7 +22,7 @@ interface CustomToastContentProps extends ToastContentProps {
   titleName: string;
   color: string;
   textShadow?: string;
-  alertData: RealTimeLprData | RealTimeFaceData | null;
+  alertData: RealTimeLprData | any | null;
   type?: string;
   onDelete?: () => void;
 }
@@ -33,7 +33,7 @@ const RealTimeToastify: React.FC<CustomToastContentProps> = ({
   color,
   textShadow,
   alertData,
-  type = "vehicle",
+  type = "lpr",
   onDelete,
 }) => {
   if (!alertData) return null;
@@ -50,8 +50,8 @@ const RealTimeToastify: React.FC<CustomToastContentProps> = ({
     `${CENTER_FILE_URL}${(alertData as RealTimeLprData).plate_image_url}`,
   ] :
   [
-    `${CENTER_FILE_URL}${(alertData as RealTimeFaceData).detect_image_url}`,
-    `${CENTER_FILE_URL}${(alertData as RealTimeFaceData).upload_image_url}`,
+    `${CENTER_FILE_URL}${(alertData as any).capture_image_url}`,
+    `${CENTER_FILE_URL}${(alertData as any).person_image_url}`,
   ];
 
   const sliceDropdown = useSelector(
@@ -169,13 +169,13 @@ const RealTimeToastify: React.FC<CustomToastContentProps> = ({
                 )
               })()) : (
                 (() => {
-                  const prefix = sliceDropdown.prefix?.data.find(prefix => prefix.id === (alertData as RealTimeFaceData).title_id);
+                  const prefix = sliceDropdown.prefix?.data.find(prefix => prefix.id === (alertData as any).watchlist?.title_id);
                   const newPrefix = i18n.language === "th"
                     ? prefix?.title_th || ""
                     : prefix?.title_en || "";
                   return (
                     <>
-                      <p>{`${newPrefix}${(alertData as RealTimeFaceData).first_name} ${(alertData as RealTimeFaceData).last_name}`}</p>
+                      <p>{`${newPrefix}${(alertData as any).watchlist?.firstname} ${(alertData as any).watchlist?.lastname}`}</p>
                     </>
                   )
                 })()
@@ -187,7 +187,7 @@ const RealTimeToastify: React.FC<CustomToastContentProps> = ({
         {/* Right Section */} 
         <div className="flex flex-col text-[11px] pl-2 py-1 pr-1 bg-white space-y-1 text-black"> 
           {
-            type === "vehicle" ?
+            type === "lpr" ?
             (
               <>
                 <div className="flex">
@@ -271,23 +271,23 @@ const RealTimeToastify: React.FC<CustomToastContentProps> = ({
               <>
                 <div className="flex">
                   <span className="w-20 font-medium">{`${t('feed-data.person-type')}:`}</span>
-                  <span>{(alertData as RealTimeFaceData).person_class_name || "-"}</span>
+                  <span>{(alertData as any).person_class?.title_en || "-"}</span>
                 </div>
                 <div className="flex">
                   <span className="w-[70px] font-medium">{`${t('feed-data.behavior')}:`}</span>
-                  <span>{(alertData as RealTimeFaceData).special_person_remark || "-"}</span>
+                  <span>{(alertData as any).watchlist?.behavior || "-"}</span>
                 </div>
                 <div className="flex mb-7">
                   <span className="w-[70px] font-medium">{`${t('feed-data.checkpoint')}:`}</span>
-                  <span>{(alertData as RealTimeFaceData).camera_name || "-"}</span>
+                  <span>{(alertData as any).base_camera?.camera_name || "-"}</span>
                 </div>
                 <div className="flex">
                   <span className="w-20 font-medium">{`${t('feed-data.owner-name')}:`}</span>
-                  <span>{(alertData as RealTimeFaceData).special_person_owner_name || "-"}</span>
+                  <span>{(alertData as any).watchlist?.case_owner_name || "-"}</span>
                 </div>
                 <div className="flex">
                   <span className="w-20 font-medium">{`${t('feed-data.phone')}:`}</span>
-                  <span>{(alertData as RealTimeFaceData).special_person_owner_phone || "-"}</span>
+                  <span>{(alertData as any).watchlist?.case_owner_phone || "-"}</span>
                 </div>
               </>
             )

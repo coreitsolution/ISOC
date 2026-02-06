@@ -26,7 +26,7 @@ import {
   WatchListImageResponse,
   WatchListImageData,
   SuspectPeopleCreateResponse,
-  FileUploadResponse,
+  FileFaceUploadResponse,
   SuspectPeople,
   WatchListFileResponse,
 } from "../../../features/types";
@@ -44,7 +44,14 @@ import UploadIcon from "../../../assets/icons/upload.png";
 import { useTranslation } from 'react-i18next';
 
 // Utils
-import { formatPhone, formatThaiID, getId, getStringId, getFilesDiff } from '../../../utils/commonFunction';
+import { 
+  formatPhone, 
+  formatThaiID, 
+  getId, 
+  getStringId, 
+  getFilesDiff,
+  // checkImageSize
+} from '../../../utils/commonFunction';
 import { PopupMessage, PopupMessageWithCancel } from '../../../utils/popupMessage';
 import { fetchClient, combineURL } from "../../../utils/fetchClient";
 
@@ -61,8 +68,11 @@ interface FormData {
   district_code: string
   subdistrict_code: string
   zipcode: string
+  dss_orgcode: string
+  dss_person_id: string
   person_class_id: number
   case_number: string
+  image_url: string
   arrest_warrant_date: Date | null
   arrest_warrant_expire_date: Date | null
   behavior: string
@@ -124,6 +134,9 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
     district_code: "",
     subdistrict_code: "",
     zipcode: "",
+    image_url: "",
+    dss_orgcode: "",
+    dss_person_id: "",
     person_class_id: 0,
     case_number: "",
     arrest_warrant_date: null,
@@ -166,6 +179,9 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         case_owner_phone: selectedRow.case_owner_phone,
         images: selectedRow.images,
         files: selectedRow.files,
+        image_url: selectedRow.image_url,
+        dss_orgcode: selectedRow.dss_orgcode,
+        dss_person_id: selectedRow.dss_person_id,
         active_status: selectedRow.active  ? 1 : 0,
       });
       setValue("prefix", selectedRow.title_id);
@@ -185,7 +201,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       setValue("case_number", selectedRow.case_number);
       setValue("arrest_date", selectedRow.arrest_warrant_date);
       setValue("end_arrest_date", selectedRow.arrest_warrant_expire_date);
-      setValue("active_status", selectedRow.active);
+      setValue("active_status", selectedRow.active  ? 1 : 0);
     }
     else {
       setFormData({
@@ -199,6 +215,8 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         subdistrict_code: "",
         zipcode: "",
         person_class_id: 0,
+        dss_orgcode: "",
+        dss_person_id: "",
         case_number: "",
         arrest_warrant_date: null,
         arrest_warrant_expire_date: null,
@@ -207,6 +225,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         case_owner_phone: ownerPhone,
         images: [],
         files: [],
+        image_url: "",
         active_status: 0,
       });
       setValue("prefix", "");
@@ -471,35 +490,52 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
 
     const fileArray = Array.from(files)
 
+    // for (const file of fileArray) {
+    //   if (!file.type.startsWith("image/")) continue
+
+    //   const isOverSize = await checkImageSize(file, 540, 1080);
+
+    //   if (isOverSize) {
+    //     PopupMessage(
+    //       t("message.error.image-size"),
+    //       t("message.error.image-size-detail"),
+    //       "error"
+    //     )
+    //     return
+    //   }
+    // }
+
     try {
       const formData = new FormData()
       fileArray.forEach(file => {
-        formData.append("files", file)
+        formData.append("file", file)
       })
 
-      const response = await fetchClient<FileUploadResponse>(combineURL(CENTER_API, "/upload/"), {
+      const response = await fetchClient<FileFaceUploadResponse>(combineURL(CENTER_API, "/upload/crop"), {
         method: "POST",
         isFormData: true,
         body: formData,
       })
 
       if (response.success) {
-        const images = response.data.map((file) => ({
+        const images = {
+          ...response.data,
           id: 0,
-          title: file.title,
-          image_url: file.url,
+          uid: "",
+          title: response.data.title,
+          image_url: response.data.url,
           watchlist_uid: "",
           notes: "",
           created_at: "",
           updated_at: "",
-        }))
+        }
         setFormData((prev) => ({
           ...prev,
-          images,
+          images: [...prev.images, images]
         }))
         setValue("image", "uploaded");
         clearErrors("image");
-        setImageImportDataList((prev) => ([...prev, ...images]));
+        setImageImportDataList((prev) => ([...prev, images]));
       }
     } 
     catch (error) {
@@ -519,10 +555,10 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       try {
         const formData = new FormData()
         newFiles.forEach(file => {
-          formData.append("files", file)
+          formData.append("file", file)
         })
 
-        const response = await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, "/upload/"), {
+        const response = await fetchClient<WatchListFileResponse>(combineURL(CENTER_API, "/upload"), {
           method: "POST",
           isFormData: true,
           body: formData,
@@ -577,6 +613,10 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
   }
 
   const saveSuspectPerson = async (data: any) => {
+    let image_url = "";
+    if (formData.images.length > 0) {
+      image_url = formData.images[0].image_url;
+    }
     try {
       const body = JSON.stringify({
         title_id: getId(data.prefix),
@@ -600,7 +640,9 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
         ...(
           data.zipcode && { zipcode: data.zipcode }
         ),
+        image_url: image_url,
         person_class_id: getId(data.personType),
+        dss_orgcode: getId(data.personType)?.toString(),
         ...(
           data.case_number && { case_number: data.case_number }
         ),
@@ -705,17 +747,21 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       const arrestDate = data.arrest_warrant_date ? dayjs(data.arrest_warrant_date).format("YYYY-MM-DD") : null;
       const endArrestDate = data.arrest_warrant_expire_date ? dayjs(data.arrest_warrant_expire_date).format("YYYY-MM-DD") : null;
 
+      let image_url = "";
+      if (formData.images.length > 0) {
+        image_url = formData.images[0].image_url;
+      }
+
       const body = JSON.stringify({
         uid: selectedRow.uid,
+        image_url: image_url,
         ...(
           getId(data.prefix) !== selectedRow?.title_id && { title_id: getId(data.prefix) }
         ),
-        ...(
-          data.firstname !== selectedRow?.firstname && { firstname: data.firstname }
-        ),
-        ...(
-          data.lastname !== selectedRow?.lastname && { lastname: data.lastname }
-        ),
+        firstname: formData.firstname,
+        lastname: formData.lastname,
+        dss_orgcode: formData.dss_orgcode,
+        dss_person_id: formData.dss_person_id,
         ...(
           data.id_card_number !== selectedRow?.idcard_number && { idcard_number: data.id_card_number.replaceAll("-", "").slice(0, 13) }
         ),
@@ -869,7 +915,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
     const arrestDate = formData.arrest_warrant_date ? dayjs(formData.arrest_warrant_date).format("YYYY-MM-DD") : null;
     const endArrestDate = formData.arrest_warrant_expire_date ? dayjs(formData.arrest_warrant_expire_date).format("YYYY-MM-DD") : null;
 
-    const idCardNumber = formData.id_card_number ? formData.id_card_number.replaceAll("-", "").slice(0, 13) : "";
+    const idCardNumber = formData.id_card_number ? formData.id_card_number.replaceAll("-", "").slice(0, 13) : null;
 
     const isOtherDataChanged =
       formData.title_id !== selectedRow?.title_id ||
@@ -950,6 +996,8 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       subdistrict_code: "",
       zipcode: "",
       person_class_id: 0,
+      dss_orgcode: "",
+      dss_person_id: "",
       case_number: "",
       arrest_warrant_date: null,
       arrest_warrant_expire_date: null,
@@ -958,6 +1006,7 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
       case_owner_phone: "",
       images: [],
       files: [],
+      image_url: "",
       active_status: 0,
     });
     setValue("prefix", "");
@@ -1377,11 +1426,14 @@ const ManageSuspectPerson: React.FC<ManageSuspectPersonProps> = ({open, onClose,
                       </div>
                     ) : (
                       /* No Images */
-                      <div className="flex flex-col justify-center items-center">
-                        <Icon icon={Download} size={80} color="#999999" />
-                        <span className="text-[18px] text-nobel mt-5">
-                          {t('button.upload-image')}
-                        </span>
+                      <div className='flex flex-col justify-center items-center gap-2'>
+                        <div className="flex flex-col justify-center items-center">
+                          <Icon icon={Download} size={80} color="#999999" />
+                          <span className="text-[18px] text-nobel mt-5">
+                            {t('button.upload-image')}
+                          </span>
+                        </div>
+                        <span className='text-[12px] text-nobel'>{t('text.image-size-detail')}</span>
                       </div>
                     )}
                     {/* Hidden File Input */}

@@ -379,6 +379,7 @@ const SearchPlateWithCondition: React.FC<SearchPlateWithConditionProps> = ({}) =
           queryParams: {
             filter: `${filters.join(",")}`,
             limit: "1000",
+            orderBy: "id.asc"
           },
         });
 
@@ -1048,7 +1049,7 @@ const SearchPlateWithCondition: React.FC<SearchPlateWithConditionProps> = ({}) =
       [columnLabels.carRoute]: data.currentRoute?.camera_name ?? "-",
       [columnLabels.dayRange]: dayjs(data.epoch_end).format("DD/MM/YYYY"),
       [columnLabels.time]: dayjs(data.epoch_end).format("HH:mm:ss"),
-      [columnLabels.remarkBehavior]: data.remark || "-",
+      [columnLabels.remarkBehavior]: data.behavior || "-",
     }));
 
     const csvString =

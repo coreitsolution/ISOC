@@ -27,6 +27,7 @@ export interface MapProps {
   streetViewControl?: boolean
   fullscreenControl?: boolean
   currentLocation?: boolean
+  realtimeCamera?: boolean
   onMapLoad?: (mapInstance: LeafletMap | null) => void
 }
 
@@ -92,6 +93,8 @@ export interface RealTimeLprData {
   title_name: string;
   color: string;
   pin_background_color: string;
+  feedBackgroundColor: string;
+  feedColor: string;
   text_shadow: string;
   title_id: number;
   first_name: string;
@@ -126,6 +129,8 @@ export interface RealTimeFaceData {
   special_person_owner_name: string;
   special_person_owner_phone: string;
   face_confidence: string;
+  feedBackgroundColor: string;
+  feedColor: string;
 }
 
 export interface RealTimeLprDataResponse {
@@ -290,7 +295,6 @@ export interface SpecialPlate {
   arrest_warrant_expire_date: string
   behavior: string;
   case_owner_name: string;
-  case_owner_agency: string;
   case_owner_phone: string;
   visible: boolean;
   active: boolean;
@@ -325,6 +329,15 @@ export interface FileUploadResponse {
   data: FileUpload[];
 }
 
+export interface FileFaceUploadResponse {
+  statusCode: number;
+  status: string;
+  success: boolean;
+  message: string;
+  pagination: Pagination;
+  data: FileUpload;
+}
+
 export interface UploadFileData {
   id: number;
   special_plate_id: number;
@@ -348,7 +361,10 @@ export interface SuspectPeople {
   district_code: string
   subdistrict_code: string
   zipcode: string
+  image_url: string
   person_class_id: number
+  dss_orgcode: string
+  dss_person_id: string
   case_number: string
   arrest_warrant_date: string
   arrest_warrant_expire_date: string
@@ -359,7 +375,8 @@ export interface SuspectPeople {
   files: WatchListFileData[]
   visible: boolean
   notes: string
-  active: boolean
+  active: boolean;
+  deleted: boolean;
   createdAt?: string,
   updatedAt?: string,
 }
@@ -562,6 +579,8 @@ export interface CheckpointResponse {
   data: Checkpoint[];
 }
 
+type CameraGroup = "lpr" | "face";
+
 export interface Camera {
   id: number
   uid: string
@@ -583,6 +602,7 @@ export interface Camera {
   api_server_url: string
   live_server_url: string
   live_stream_url: string
+  mjpeg_stream_url: string
   serial_number: string | null
   license_key: string | null
   sample_image_url: string
@@ -601,6 +621,36 @@ export interface Camera {
   request_delete: boolean
   request_delete_reason: string | null
   is_license_expire?: boolean;
+  is_selected?: boolean;
+  group?: CameraGroup;
+}
+
+export interface CameraFace {
+  id: number;
+  uid: string;
+  camera_name: string;
+  channel_name: string;
+  camera_ip: string;
+  camera_type: string;
+  channel_id: string;
+  center_uid: string;
+  checkpoint_uid: string;
+  province_code: string;
+  district_code: string;
+  subdistrict_code: string;
+  latitude: number;
+  longitude: number;
+  rtsp_url: string;
+  live_stream_url: string;
+  visible: boolean;
+  active: boolean;
+  alive: boolean;
+  last_online: string;
+  last_check: string;
+  created_at: string;
+  updated_at: string;
+  detection_count: number;
+  group?: CameraGroup;
 }
 
 export interface CameraResponse {
@@ -612,12 +662,24 @@ export interface CameraResponse {
   data: Camera[];
 }
 
+export interface CameraFaceResponse {
+  statusCode: number;
+  status: string;
+  success: boolean;
+  message: string;
+  pagination: Pagination;
+  data: CameraFace[];
+}
+
 export interface NotificationList {
   id: number;
   camera_uid: string;
   camera_name: string;
   plate_number: string;
   plate_prefix: string;
+  prefix_title: string;
+  first_name: string;
+  last_name: string;
   region_code: string;
   iconColor: string;
   bgColor: string;
@@ -627,6 +689,7 @@ export interface NotificationList {
   detectTime: string;
   camera_latitude: string;
   camera_longitude: string;
+  detect_type: string;
 }
 
 export interface CheckpointCamera {
@@ -753,6 +816,7 @@ export interface WatchListFileResponse {
 
 export interface WatchListImageData {
   id: number;
+  uid: string;
   watchlist_uid: string;
   title: string;
   image_url: string;

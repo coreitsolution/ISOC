@@ -23,6 +23,8 @@ import AddEditUser from './modules/add-edit-user/AddEditUser';
 import SpecialPlateScreen from './modules/special-plate/SpecialPlate';
 import UserInfo from './modules/user-info/UserInfo';
 import Setting from './modules/setting/Setting';
+import SettingFace from './modules/setting-face/SettingFace';
+// import SearchMultiDetect from './modules/search-multi-detect/SearchMultiDetect';
 // import ManageLog from './modules/manage-log/ManageLog';
 // import UsageStatisticsGraph from './modules/usage-statistics-graph/UsageStatisticsGraph';
 // import EndUser from './modules/end-user/EndUser';
@@ -65,7 +67,7 @@ import {
   addToastMessage,
 } from './features/realtime-data/realtimeDataSlice';
 import { addListNotification, NotificationType, removeNotification } from "./features/notification/notificationSlice";
-import { triggerCameraRefresh, triggerRequestDeleteCamera } from "./features/refresh/refreshSlice";
+import { triggerCameraRefresh } from "./features/refresh/refreshSlice";
 import {
   fetchVehicleCountThunk,
   setCameraSelected,
@@ -87,7 +89,7 @@ import Watermark from "./components/watermark/WaterMark";
 import { getUrls } from './config/runtimeConfig';
 
 // utils
-import { getPlateTypeColor, checkSpecialPlate, getPlateClassName } from './utils/commonFunction'
+import { getPlateTypeColor, checkSpecialPlate, getPlateClassName, getPersonClassName, getPersonTypeColor } from './utils/commonFunction'
 import { toastChannel } from "./utils/channel";
 import { useSse } from "./utils/useSse";
 import { createNotificationToast } from "./utils/notification";
@@ -119,6 +121,7 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
   const { cameraSelected } = useSelector((state: RootState) => state.vehicleCountData);
 
   const sliceSpecialPlate = useSelector((state: RootState) => state.specialPlateData);
+  const sliceSuspectPeople = useSelector((state: RootState) => state.suspectPeopleData);
   const sliceDropdown = useSelector((state: RootState) => state.dropdownData);
 
   // Ref
@@ -218,13 +221,18 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
       dispatch(fetchOfficerPositionsThunk());
       dispatch(fetchPrefixThunk(
         {
+          filter: "title_group=general|police|military",
           orderBy: i18n.language === "th" ? "title_th" : "title_en",
           limit: "100"
         }
       ));
       dispatch(fetchStatusThunk());
-      dispatch(fetchPersonTypesThunk());
-      dispatch(fetchPlateTypesThunk());
+      dispatch(fetchPersonTypesThunk({
+        filter: "visible=true",
+      }));
+      dispatch(fetchPlateTypesThunk({
+        filter: "visible=true",
+      }));
       dispatch(fetchRegionsThunk(
         {
           orderBy: i18n.language === "th" ? "name_th" : "name_en",
@@ -389,10 +397,6 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
   };
 
   const handleRealtimeMessage = useCallback(async (message: any) => {   
-    dispatch(upsertRealtimeData({
-      ...message,
-      detect_type: "lpr",
-    }));
     const now = Date.now();
 
     if (now - lastFetchRef.current > 1000) {
@@ -408,31 +412,60 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
       }
     }
 
-    if (!message.is_special_plate) return;
+    const specialPlateName = message.special_plate_id ? await getPlateClassName(message.special_plate_id, sliceDropdown.plateTypes) : "";
 
-    const specialPlateName = await getPlateClassName(message.special_plate_id, sliceDropdown.plateTypes);
-
-    const specialPlateData = await checkSpecialPlate(message.special_plate_uid, sliceSpecialPlate.specialPlates);
+    const specialPlateData = message.special_plate_uid ? await checkSpecialPlate(message.special_plate_uid, sliceSpecialPlate.specialPlates) : "";
     
-    const { backgroundColor, title, pinBackgroundColor, showAlert, textShadow } = await getPlateTypeColor(specialPlateName);
-    
-    if (!showAlert) return; 
+    const { backgroundColor, title, pinBackgroundColor, showAlert, textShadow, feedBackgroundColor, color } = await getPlateTypeColor(specialPlateName);
 
     const isBlacklist = specialPlateName.toLowerCase() === "blacklist";
 
     const updatedData = {
       ...message,
       plate_class_name: specialPlateName,
-      special_plate_remark: specialPlateData?.behavior || "-",
-      special_plate_owner_name: specialPlateData?.case_owner_name || "-",
-      special_plate_owner_agency: specialPlateData?.case_owner_agency || "-",
+      special_plate_remark: specialPlateData ? specialPlateData?.behavior : "-",
+      special_plate_owner_name: specialPlateData ? specialPlateData?.case_owner_name : "-",
       title_name: title,
       color: isBlacklist ? backgroundColor : "#FDCC0A",
       pin_background_color: isBlacklist ? pinBackgroundColor : "#FDCC0A",
       text_shadow: textShadow,
+      feedBackgroundColor: feedBackgroundColor,
+      feedTextColor: color,
+      detect_type: "lpr",
     }
-    dispatch(addToastMessage(updatedData));
+    if (message.is_special_plate && showAlert) {
+      dispatch(addToastMessage(updatedData));
+    }
+    dispatch(upsertRealtimeData(updatedData));
   }, [dispatch, sliceDropdown.plateTypes, sliceSpecialPlate.specialPlates]);
+
+  const handleFaceRealtimeMessage = useCallback(async (message: any) => {
+    const specialPersonName = message.watchlist.person_class_id ? await getPersonClassName(message.watchlist?.person_class_id, sliceDropdown.personTypes) : "";
+
+    const { backgroundColor, title, pinBackgroundColor, showAlert, textShadow, feedBackgroundColor, color } = await getPersonTypeColor(specialPersonName);
+    
+    if (!showAlert) return; 
+
+    const isBlacklist = specialPersonName.toLowerCase() === "blacklist";
+
+    const updatedData = {
+      ...message,
+      plate_class_name: specialPersonName,
+      special_plate_remark: message.watchlist?.behavior || "-",
+      special_plate_owner_name: message.watchlist?.case_owner_name || "-",
+      title_name: title,
+      color: isBlacklist ? backgroundColor : "#FDCC0A",
+      pin_background_color: isBlacklist ? pinBackgroundColor : "#FDCC0A",
+      text_shadow: textShadow,
+      feedBackgroundColor: feedBackgroundColor,
+      feedTextColor: color,
+      detect_type: "face",
+      watchList: message.watchlist,
+      epoch_end: message.alarm_date,
+    }
+    dispatch(upsertRealtimeData(updatedData));
+    dispatch(addToastMessage(updatedData));
+  }, [dispatch, sliceDropdown.personTypes, sliceSuspectPeople.suspectPeople]);
 
   const handleCheckpointDataMessage = (message: Checkpoint) => {
     createNotificationToast({
@@ -464,30 +497,30 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  const listener = (message: any) => {
-    const isUpdatePage = location.pathname.includes('/manage-checkpoint-cameras');
+  // const listener = (message: any) => {
+  //   const isUpdatePage = location.pathname.includes('/manage-checkpoint-cameras');
 
-    createNotificationToast({
-      dispatch,
-      type: "requestDelete",
-      component: RequestDeleteCameraAlert,
-      theme: "light",
-      content: "alert.request-delete-camera-content",
-      variables: { number: message.data.all_request_count + 1 },
-      messageId: message.timestampUtc,
-      style: {
-        paddingTop: "45px",
-        minHeight: "161px",
-        maxHeight: "161px",
-      },
-      updateAction: () => {
-        if (isUpdatePage) dispatch(triggerRequestDeleteCamera());
-        else navigate("/center/manage-checkpoint-cameras", { replace: true });
-      },
-      closeAction: "closeRequestDeleteCameraAlert",
-      id: message.id
-    });
-  };
+  //   createNotificationToast({
+  //     dispatch,
+  //     type: "requestDelete",
+  //     component: RequestDeleteCameraAlert,
+  //     theme: "light",
+  //     content: "alert.request-delete-camera-content",
+  //     variables: { number: message.data.all_request_count + 1 },
+  //     messageId: message.timestampUtc,
+  //     style: {
+  //       paddingTop: "45px",
+  //       minHeight: "161px",
+  //       maxHeight: "161px",
+  //     },
+  //     updateAction: () => {
+  //       if (isUpdatePage) dispatch(triggerRequestDeleteCamera());
+  //       else navigate("/center/manage-checkpoint-cameras", { replace: true });
+  //     },
+  //     closeAction: "closeRequestDeleteCameraAlert",
+  //     id: message.id
+  //   });
+  // };
 
   // const handleLicenseExpire = (message: any) => {
   //   createNotificationToast({
@@ -575,6 +608,14 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
   useSse(
     CENTER_SERVER_SENT_EVENTS_URL,
     CENTER_SERVER_SENT_EVENTS_TOKEN,
+    "watchlist_detect_event",
+    handleFaceRealtimeMessage,
+    enabled
+  );
+
+  useSse(
+    CENTER_SERVER_SENT_EVENTS_URL,
+    CENTER_SERVER_SENT_EVENTS_TOKEN,
     "camera_status_event",
     createCameraNotification,
     enabled,
@@ -597,13 +638,13 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
     enabled,
   );
 
-  useSse(
-    CENTER_SERVER_SENT_EVENTS_URL,
-    CENTER_SERVER_SENT_EVENTS_TOKEN,
-    "delete-camera-request",
-    listener,
-    enabled,
-  );
+  // useSse(
+  //   CENTER_SERVER_SENT_EVENTS_URL,
+  //   CENTER_SERVER_SENT_EVENTS_TOKEN,
+  //   "delete-camera-request",
+  //   listener,
+  //   enabled,
+  // );
 
   return <>{children}</>;
 }
@@ -740,6 +781,26 @@ function App() {
               <Setting />
             </ProtectedRoute>
           }></Route>
+          <Route path='center/setting-face' element={
+            <ProtectedRoute 
+              permission={authData?.userInfo?.permissions
+                ? authData.userInfo.permissions.center.settingFace?.select
+                : undefined
+              }
+            >
+              <SettingFace />
+            </ProtectedRoute>
+          }></Route>
+          {/* <Route path='center/search-multi-detect' element={
+            <ProtectedRoute 
+              permission={authData?.userInfo?.permissions
+                ? authData.userInfo.permissions.center.multiDetectSearch?.select
+                : true
+              }
+            >
+              <SearchMultiDetect />
+            </ProtectedRoute>
+          }></Route> */}
           {/*  
             <Route path='center/manage-checkpoint-cameras' element={
               <ProtectedRoute 

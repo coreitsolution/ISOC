@@ -12,7 +12,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ id, index, children }) => (
     key={`data_${id}_${index}`}
     className='flex flex-col border border-[#CCD0CF]'
   >
-    <div className='grid grid-cols-[55%_45%]'>
+    <div className='grid grid-cols-[55%_45%] h-full'>
       {children}
     </div>
   </motion.div>

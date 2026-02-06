@@ -12,7 +12,8 @@ import {
   SuspectPeople,
 } from '../features/types';
 import {
-  PlateTypesResponse
+  PlateTypesResponse,
+  PersonResponse,
 } from "../features/dropdown/dropdownTypes"
 
 dayjs.extend(utc);
@@ -81,10 +82,12 @@ export const hashPassword = async (plainPassword: string): Promise<string> => {
 };
 
 export const getId = (val: number | Option) => {
+  if (!val) return null;
   return typeof val === "number" ? val : val.value;
 };
 
 export const getStringId = (val: string | Option) => {
+  if (!val) return null;
   return typeof val === "string" ? val : val.value;
 };
 
@@ -163,30 +166,55 @@ export const getPlateTypeColor = (typeName: string) => {
 export const getPersonTypeColor = (typeName: string) => {
   let color = "white";
   let backgroundColor = "";
+  let pinBackgroundColor = "black";
+  let feedBackgroundColor = "#161817";
+  let textShadow = "";
+  let title = "";
+  let showAlert = false;
 
   switch (typeName.toLowerCase()) {
     case "member":
+      title = "Normal";
       color = "white";
       backgroundColor = "#0099ff";
+      pinBackgroundColor = "#0099ff";
+      feedBackgroundColor = "#0099ff";
+      showAlert = true;
       break;
     case "vip":
+      title = "VIP";
       color = "white";
       backgroundColor = "#009900";
+      pinBackgroundColor = "#009900";
+      feedBackgroundColor = "#009900";
+      showAlert = true;
       break;
     case "blacklist":
+      title = "BlackList";
       color = "white";
       backgroundColor = "#E5252A";
+      pinBackgroundColor = "#E5252A";
+      feedBackgroundColor = "#E5252A";
+      textShadow = "2px 0 #fff, -2px 0 #fff, 0 2px #fff, 0 -2px #fff, 1px 1px #fff, -1px -1px #fff, 1px -1px #fff, -1px 1px #fff";
+      showAlert = true;
       break;
     case "watchlist":
+      title = "WatchList";
       color = "white";
       backgroundColor = "#FDCC0A";
+      pinBackgroundColor = "#FDCC0A";
+      feedBackgroundColor = "#FDCC0A";
+      showAlert = true;
       break;
     default:
       color = "white";
       backgroundColor = "white";
+      pinBackgroundColor = "white";
+      feedBackgroundColor = "white";
+      showAlert = true;
       break;
   }
-  return { color, backgroundColor }
+  return { color, backgroundColor, feedBackgroundColor, pinBackgroundColor, title, showAlert, textShadow }
 }
 
 export const getImageFormat = (src: string) => {
@@ -313,12 +341,38 @@ export const checkSpecialPlate = (uid: string, specialPlateList: SpecialPlateRes
   return specialPlate
 };
 
-export const checkSpecialPerson = (prefixId: number, firstName: string, lastName: string, suspectPeopleList: SuspectPeopleResponse | null): SuspectPeople | undefined => {
-  const suspectPerson = suspectPeopleList?.data.find(sp => sp.title_id === prefixId && sp.firstname === firstName && sp.lastname === lastName);
+export const checkSpecialPerson = (uid: string, suspectPeopleList: SuspectPeopleResponse | null): SuspectPeople | undefined => {
+  const suspectPerson = suspectPeopleList?.data.find(sp => sp.uid === uid && sp.deleted === false && sp.active === true);
   return suspectPerson
 };
 
 export const getPlateClassName = (classId: number, plateTypeList: PlateTypesResponse | null) => {
   const plateType = plateTypeList?.data.find(type => type.id === classId);
   return plateType?.title_en || "-";
+}
+
+export const getPersonClassName = (classId: number, personTypeList: PersonResponse | null) => {
+  const personType = personTypeList?.data.find(type => type.id === classId);
+  return personType?.title_en || "-";
+}
+
+export const checkImageSize = (file: File, width: number, height: number): Promise<boolean> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+
+      const isOverSize = img.width > width || img.height > height
+      resolve(isOverSize)
+    }
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error("Invalid image file"))
+    }
+
+    img.src = url
+  })
 }

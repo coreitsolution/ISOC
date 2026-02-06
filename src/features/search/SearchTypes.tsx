@@ -1,6 +1,6 @@
 // Types
 import { Region} from "../dropdown/dropdownTypes";
-import { RealTimeLprData, Pagination } from "../types";
+import { RealTimeLprData, Pagination, WatchListImageData } from "../types";
 
 export interface FilterRealTimeBody {
   checkpointId: number
@@ -66,34 +66,105 @@ export interface FileData {
   url: string
 }
 
+export interface FileDataResponse {
+  statusCode: number;
+  status: string;
+  success: boolean;
+  message: string;
+  pagination: Pagination;
+  data: FileData[];
+}
+
 export interface SuspectPersonSearch {
-  id: number
-  title_id: number
-  prefix: string
-  name: string
-  firstName: string
-  lastName: string
-  nationalId: string
-  imagesData: FileData
-  startDate: string
-  endDate: string
-  department: string
-  departmentId: number
-  area: string
-  areaId: number
-  province: string
-  provinceId: number
-  station: string
-  stationId: number
-  checkpoints: FilterRealTimeBody[]
-  percentConfidence: number
-  dateTime: string
-  remark: string
-  person_class_id: number
-  person_class?: string
-  ownerName?: string
-  ownerPhone?: string
-  backgroundColor?: string
+  id: number;
+  uid: string;
+  checkpoint_uid: string | null;
+  dss_orgcode: string | null;
+  dss_person_id: string | null;
+  title_id: number | null;
+  title_name?: string;
+  firstname: string;
+  lastname: string;
+  idcard_number: string | null;
+  image_url: string | null;
+  address: string | null;
+  province_code: string | null;
+  district_code: string | null;
+  subdistrict_code: string | null;
+  zipcode: string | null;
+  person_class_id: number | null;
+  person_class?: string;
+  case_number: string | null;
+  images: WatchListImageData[];
+  files: any[];
+  arrest_warrant_date: string | null;
+  arrest_warrant_expire_date: string | null;
+  behavior: string | null;
+  case_owner_name: string | null;
+  case_owner_agency: string | null;
+  case_owner_phone: string | null;
+  sync_state: "pending" | "success" | "failed" | string;
+  sync_date: string | null;
+  visible: boolean;
+  active: boolean;
+  deleted: boolean;
+  deleted_by_uid: string | null;
+  created_at: string;
+  updated_at: string;
+  notes: string | null;
+  dss_data: DSSData[];
+  dss_error: DSSError | null;
+}
+
+export interface DSSData {
+  id: string;
+  age: string | null;
+  gender: string | null;
+  similarity: string | null;
+  captureTime: string;
+  channelId: string;
+  channelName: string;
+  eventCode: string;
+  personId: string | null;
+  personName: string | null;
+  personSimilarity: string | null;
+  faceBase64: string | null;
+  pictureBase64: string | null;
+  faceImageUrl: string | null;
+  pictureUrl: string | null;
+  recordSource: string | null;
+  baseCamera: FaceCamera;
+}
+
+export interface FaceCamera {
+  id: number;
+  uid: string;
+  camera_name: string;
+  camera_ip: string;
+  camera_type: string;
+  channel_id: string;
+  center_uid: string;
+  checkpoint_uid: string | null;
+  province_code: string | null;
+  district_code: string | null;
+  subdistrict_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  rtsp_url: string | null;
+  live_stream_url: string | null;
+  visible: boolean;
+  active: boolean;
+  alive: boolean;
+  last_online: string | null;
+  last_check: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DSSError {
+  code: number;
+  data: any;
+  desc: string;
 }
 
 export interface VehicleModelDetail {
@@ -214,4 +285,13 @@ export interface PlateRouteResponse {
   message: string;
   pagination: Pagination;
   data: PlateRoute[];
+}
+
+export interface SuspectPersonSearchResponse {
+  statusCode: number;
+  status: string;
+  success: boolean;
+  message: string;
+  pagination: Pagination;
+  data: SuspectPersonSearch[];
 }

@@ -124,12 +124,18 @@ const ImportFile: React.FC<ImportFileProps> = ({open, onClose}) => {
   }
 
   const addSuspectPeople = async (data: ImportSuspectPeople) => {
+    let image_url = "";
+    if (data.imagesUploadedData && data.imagesUploadedData.url) {
+      image_url = data.imagesUploadedData.url;
+    }
+
     try {
       const body = JSON.stringify({
         title_id: data.title_id,
         firstname: data.first_name,
         lastname: data.last_name,
         person_class_id: data.person_class_id,
+        dss_orgcode: data.person_class_id?.toString(),
         ...(
           data.id_card_number && { id_card_number: data.id_card_number }
         ),
@@ -151,6 +157,7 @@ const ImportFile: React.FC<ImportFileProps> = ({open, onClose}) => {
         ...(
           data.case_number && { case_number: data.case_number }
         ),
+        image_url: image_url,
         arrest_warrant_date: data.arrest_warrant_date ? dayjs(data.arrest_warrant_date).format('YYYY-MM-DD') : null,
         arrest_warrant_expire_date: data.arrest_warrant_expire_date ? dayjs(data.arrest_warrant_expire_date).format('YYYY-MM-DD') : null,
         behavior: data.behavior,

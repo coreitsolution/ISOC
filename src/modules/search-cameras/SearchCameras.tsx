@@ -14,6 +14,8 @@ import DialogContent from '@mui/material/DialogContent';
 import {
   Camera,
   CameraResponse,
+  CameraFace,
+  CameraFaceResponse,
 } from "../../features/types";
 import { 
   Districts, 
@@ -53,9 +55,15 @@ interface SearchCamerasProps {
   open: boolean;
   selectedCameras: (cameraSelected: {value: any, label: string}[]) => void;
   onClose: () => void;
+  isFace?: boolean;
 }
 
-const SearchCameras: React.FC<SearchCamerasProps> = ({open, onClose, selectedCameras}) => {
+const SearchCameras: React.FC<SearchCamerasProps> = ({
+  open, 
+  onClose, 
+  selectedCameras, 
+  isFace = false
+}) => {
   const { CENTER_API } = getUrls();
 
   // State
@@ -72,7 +80,7 @@ const SearchCameras: React.FC<SearchCamerasProps> = ({open, onClose, selectedCam
   const [selectedCameraObjects, setSelectedCameraObjects] = useState<{value: any, label: string}[]>([]);
   const [districtsList, setDistrictsList] = useState<Districts[]>([]);
   const [subDistrictsList, setSubDistrictsList] = useState<SubDistricts[]>([]);
-  const [cameraList, setCameraList] = useState<Camera[]>([]);
+  const [cameraList, setCameraList] = useState<CameraFace[] | Camera[]>([]);
   const [selectedSubDistrictObjects, setSelectedSubDistrictObjects] = useState<{value: any, label: string}[]>([]);
 
   // i18n
@@ -244,7 +252,7 @@ const SearchCameras: React.FC<SearchCamerasProps> = ({open, onClose, selectedCam
 
         const filters: string[] = [];
 
-        filters.push("deleted=false");
+        filters.push(isFace ? "active=true" : "deleted=false");
         if (!hasAll && valueList.length > 0) {
           filters.push(`subdistrict_code=${valueList.join("|")}`);
         }
@@ -255,11 +263,12 @@ const SearchCameras: React.FC<SearchCamerasProps> = ({open, onClose, selectedCam
           filters.push(`district_code=${formData.district_code}`);
         }
 
-        const res = await fetchClient<CameraResponse>(combineURL(CENTER_API, "/cameras/get"), {
+        const res = await fetchClient<CameraResponse | CameraFaceResponse>(combineURL(CENTER_API, isFace ? "/base-cameras/get": "/cameras/get"), {
           method: "GET",
           queryParams: {
             filter: filters.join(","),
             limit: "1000",
+            orderBy: "id.asc"
           },
         });
 
