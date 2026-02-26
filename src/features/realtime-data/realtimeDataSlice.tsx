@@ -4,6 +4,7 @@ import { RealTimeLprData, RealTimeFaceData } from "../../features/types";
 
 interface RealtimeDataState {
   realtimeData: (RealTimeLprData | RealTimeFaceData)[];
+  multiRealtimeData: (RealTimeLprData | RealTimeFaceData)[];
   toastNotification: (RealTimeLprData | RealTimeFaceData)[];
   realtimeDataStatus: Status;
   realtimeDataError: string | null;
@@ -11,6 +12,7 @@ interface RealtimeDataState {
 
 const initialState: RealtimeDataState = {
   realtimeData: [],
+  multiRealtimeData: [],
   toastNotification: [],
   realtimeDataStatus: Status.IDLE,
   realtimeDataError: null,

@@ -295,3 +295,47 @@ export interface SuspectPersonSearchResponse {
   pagination: Pagination;
   data: SuspectPersonSearch[];
 }
+
+export interface MultiDetectData {
+  id: string;
+  capture_time: string;
+  channel_id: string;
+  object_type: string;
+  camera_name: string | null;
+  details: MultiDetectDetail;
+  image_url: string;
+  picture_url: string; // Overview
+  created_at: string;
+}
+
+export interface MultiDetectDetail {
+  // Human
+  gender?: string | null;
+  age?: number | null;
+  bag?: string | null;
+  bag_type?: string | null;
+  coat?: string | null;
+  coat_color?: string | null;
+  trousers?: string | null;
+  trousers_color?: string | null;
+  beard?: string | null;
+  hat?: string | null;
+  hat_type?: string | null;
+  mask?: string | null;
+  glasses?: string | null;
+  emotion?: string | null;
+  // Vehicle
+  car_brand?: string;
+  car_color?: string;
+  car_type?: string;
+  plate?: string;
+}
+
+export interface MultiDetectDataResponse {
+  statusCode: number;
+  status: string;
+  success: boolean;
+  message: string;
+  pagination: Pagination;
+  data: MultiDetectData[];
+}

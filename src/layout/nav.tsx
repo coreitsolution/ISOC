@@ -97,7 +97,7 @@ function Nav() {
   }, []);
 
   const handleSlideDown = () => {
-    setSidePosition((prev: number) => Math.max(prev - 68, -100));
+    setSidePosition((prev: number) => Math.max(prev - 68, -300));
   };
 
   const navItems = [
@@ -147,18 +147,23 @@ function Nav() {
         ]
         : []
     ),
-    // ...(
-    //   authData?.userInfo?.permissions?.center?.multiDetectSearch?.select
-    //     ? [
-    //       {
-    //         path: "/center/search-multi-detect",
-    //         icon: "multi-detect",
-    //         label: "search-multi-detect",
-    //         title: t('screen.search-multi-detect.title')
-    //       }
-    //     ]
-    //     : []
-    // ),
+    ...(
+      authData?.userInfo?.permissions?.center?.multiRealtime?.select
+        ? [{ path: "/center/multi-realtime", icon: "multi-realtime", label: "multi-realtime", title: t('screen.multi-realtime.title') }]
+        : []
+    ),
+    ...(
+      authData?.userInfo?.permissions?.center?.multiDetectSearch?.select
+        ? [
+          {
+            path: "/center/search-multi-detect",
+            icon: "multi-detect",
+            label: "search-multi-detect",
+            title: t('screen.search-multi-detect.title')
+          }
+        ]
+        : []
+    ),
     ...(
       authData?.userInfo?.permissions?.center?.manageUser?.select
         ? [{ path: "/center/manage-user", icon: "add-user", label: "manage-user", title: t('screen.manage-user.title') }]
@@ -585,13 +590,7 @@ function Nav() {
           </div>
         </div>
         <div className="absolute bottom-0 left-0 pb-3 w-full flex justify-center bg-black rounded-b-[10px]">
-          {/* {sidePosition !== -400 && (
-            <RiArrowDownSFill
-              className="text-white cursor-pointer w-[2.5em] h-[2.5em]"
-              onClick={handleSlideDown}
-            />
-          )} */}
-          {sidePosition !== -100 && (
+          {sidePosition !== -300 && (
             <RiArrowDownSFill
               className="text-white cursor-pointer w-[2.5em] h-[2.5em]"
               onClick={handleSlideDown}

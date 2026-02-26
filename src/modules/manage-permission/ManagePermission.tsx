@@ -90,6 +90,8 @@ const ManagePermission: React.FC<ManagePermissionProps> = ({open, onClose, isCen
     "setting",
     "manageCheckpointCameras",
     "settingFace",
+    "multiDetectSearch",
+    "multiRealtime",
   ];
   const checkpointKeys: CheckpointPermissionsKey[] = [
     "realtime",
@@ -144,6 +146,12 @@ const ManagePermission: React.FC<ManagePermissionProps> = ({open, onClose, isCen
     settingFace: {
       select: false,
     },
+    multiDetectSearch: {
+      select: false,
+    },
+    multiRealtime: {
+      select: false,
+    },
   };
 
   const DEFAULT_CENTER_PERMISSION_NAME = {
@@ -182,6 +190,12 @@ const ManagePermission: React.FC<ManagePermissionProps> = ({open, onClose, isCen
     },
     settingFace: {
       name: t('text.ct-setting-face'),
+    },
+    multiDetectSearch: {
+      name: t('text.ct-search-multi-detect'),
+    },
+    multiRealtime: {
+      name: t('text.ct-multi-realtime'),
     },
   };
 

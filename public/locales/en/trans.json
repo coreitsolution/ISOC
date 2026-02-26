@@ -60,8 +60,7 @@
     "add-new-suspect-person-width": "175px",
     "download-template": "Download Template",
     "vehicle": "Vehicle",
-    "face": "Face",
-    "object": "Object"
+    "human": "Human"
   },
   "accordion": {
     "search-condition": "Search Conditions"
@@ -96,6 +95,7 @@
     "agency": "Agency",
     "pass-area": "Pass In Area",
     "car-brand": "Car Brand",
+    "car-type": "Car Type",
     "car-color": "Car Color",
     "start-time": "Start Date Time",
     "end-time": "End Date Time",
@@ -156,7 +156,24 @@
     "id-card-number": "National ID Card Number",
     "address": "Address",
     "zipcode": "Zip Code",
-    "select-checkpoint": "Select a checkpoint to synchronize data"
+    "select-checkpoint": "Select a checkpoint to synchronize data",
+    "suspect-list": "Suspect List",
+    "color": "Color",
+    "other": "Other",
+    "glasses": "Glasses",
+    "bag": "Bag",
+    "bag-type": "Bag Type",
+    "hat": "Hat",
+    "hat-type": "Hat Type",
+    "coat": "Coat",
+    "coat-color": "Coat Color",
+    "mask": "Mask",
+    "beard": "Beard",
+    "trousers": "Trousers",
+    "trousers-color": "Trousers Color",
+    "emotion": "Emotion",
+    "age": "Age",
+    "gender": "Gender"
   },
   "placeholder": {
     "checkpoint-station": "Find the checkpoint name",
@@ -173,6 +190,7 @@
     "agency-text": "Please input the agency",
     "pass-area": "Please select the area",
     "car-brand": "Please select the car brand",
+    "car-type": "Please select the car type",
     "car-color": "Please select the car color",
     "date-time": "DD/MM/YYYY hh:mm",
     "date": "DD/MM/YYYY",
@@ -230,7 +248,23 @@
     "id-card-number": "Please input national id card number",
     "address": "Please input address",
     "zipcode": "Please input zip code",
-    "select-checkpoint": "Select a checkpoint to synchronize data"
+    "select-checkpoint": "Select a checkpoint to synchronize data",
+    "color": "Please select the color",
+    "other": "Please input other",
+    "glasses": "Please select the glasses",
+    "bag": "Please select the bag",
+    "bag-type": "Please select the bag type",
+    "hat": "Please select the hat",
+    "hat-type": "Please select the hat type",
+    "coat": "Please select the coat",
+    "coat-color": "Please select the coat color",
+    "mask": "Please select the mask",
+    "beard": "Please select the beard",
+    "trousers": "Please select the trousers",
+    "trousers-color": "Please select the trousers color",
+    "emotion": "Please select the emotion",
+    "age": "Please select the age",
+    "gender": "Please select the gender"
   },
   "screen": {
     "real-time": {
@@ -312,6 +346,9 @@
     },
     "search-multi-detect": {
       "title": "Search Multi Object"
+    },
+    "multi-realtime": {
+      "title": "Multi Detection Real-Time Monitoring System"
     }
   },
   "feed-data": {
@@ -403,7 +440,9 @@
       "suspect-person-image": "Person Image",
       "zipcode": "Zip Code",
       "percentage-match": "Accuracy (%)",
-      "destination-checkpoint": "Sync to"
+      "destination-checkpoint": "Sync to",
+      "detect-mode": "Detection Mode",
+      "detail": "Detail"
     }
   },
   "pagination": {
@@ -447,6 +486,8 @@
     "ct-checkpoint-cameras": "Manage Checkpoint Camera Data",
     "ct-chart": "Statistical data",
     "ct-setting-face": "Face Camera Settings Information",
+    "ct-search-multi-detect": "Search Multi Object",
+    "ct-multi-realtime": "Multi Detection Real-Time Analysis System",
     "cp-real-time": "Real-Time Vehicle Analysis System",
     "cp-special-plate-search": "Special Plate Search",
     "cp-special-plate-manage": "Special Plate Manage",
@@ -521,7 +562,33 @@
     "loading-map": "Loading map...",
     "no-camera": "No Camera",
     "image-size-detail": "Image size must not exceed 540 × 1080 pixels",
-    "detect": "Detect"
+    "detect": "Detect",
+    "detect-human-detail": "Human detection details.",
+    "detect-human-selected-detail": "Selected human detection data.",
+    "detect-vehicle-detail": "Vehicle detection details.",
+    "detect-vehicle-selected-detail": "Selected vehicle detection data.",
+    "human": "Human",
+    "vehicle": "Vehicle",
+    "detail": "Detail",
+    "to": "to",
+    "years": "years",
+    "car-type": "Type",
+    "car-brand": "Brand",
+    "car-color": "Color",
+    "glasses": "Glasses",
+    "bag": "Bag",
+    "bag-type": "Bag Type",
+    "hat": "Hat",
+    "hat-type": "Hat Type",
+    "coat": "Coat",
+    "coat-color": "Coat Color",
+    "mask": "Mask",
+    "beard": "Beard",
+    "trousers": "Trousers",
+    "trousers-color": "Trousers Color",
+    "emotion": "Emotion",
+    "age": "Age",
+    "gender": "Gender"
   },
   "alert": {
     "save-success": "Changes saved successfully",
@@ -650,11 +717,26 @@
       "person-type": "Person Type",
       "behavior": "Behavior",
       "owner-name": "Owner Name",
-      "phone-2": "Phone"
+      "phone-2": "Phone",
+      "glasses": "Glasses",
+      "bag": "Bag",
+      "bag-type": "Bag Type",
+      "hat": "Hat",
+      "hat-type": "Hat Type",
+      "coat": "Coat",
+      "coat-color": "Coat Color",
+      "mask": "Mask",
+      "beard": "Beard",
+      "trousers": "Trousers",
+      "trousers-color": "Trousers Color",
+      "emotion": "Emotion",
+      "age": "Age",
+      "gender": "Gender"
     }
   },
   "file": {
     "search-with-condition": "Conditional Plate Inspection Report",
+    "search-multi-detect": "Search Multi Object Report",
     "user-list": "User List",
     "suspect-people": "Suspicious Person Investigation Report",
     "print-date": "Print Date"
@@ -662,6 +744,7 @@
   "pdf": {
     "search-with-condition": "Conditional Plate Inspection Report",
     "search-with-condition-route": "Conditional Plate Inspection Report",
+    "search-multi-detect": "Search Multi Object Report",
     "suspect-people": "Suspicious Person Investigation Report",
     "statistic-data": "Statistic Data Report",
     "print-date": "Print Date",
@@ -734,6 +817,26 @@
       "total-volume": "Total volume",
       "date": "Date",
       "special-plate": "Special plate type"
+    }
+  },
+  "radio-button": {
+    "wear-glasses": "ใส่แว่น",
+    "wear-bag": "สวมกระเป๋า",
+    "wear-hat": "ใส่หมวก",
+    "wear-coat": "ใส่เสื้อคลุม",
+    "wear-mask": "สวมหน้ากาก",
+    "wear-trousers": "สวมกางเกงขายาว",
+    "have-beards": "มีหนวด",
+    "gender": "เพศ",
+    "emotion": "อารมณ์",
+    "value": {
+      "yes": "ใช่",
+      "no": "ไม่ใช่",
+      "specify": "ระบุ",
+      "not-specify": "ไม่ระบุ",
+      "male": "ชาย",
+      "female": "หญิง",
+      "unknown": "ไม่ระบุ"
     }
   }
 }

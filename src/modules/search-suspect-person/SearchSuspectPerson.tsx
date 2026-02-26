@@ -15,9 +15,10 @@ import TableRow from '@mui/material/TableRow';
 import TableHead from '@mui/material/TableHead';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import { SelectChangeEvent } from '@mui/material/Select';
 import Paper from '@mui/material/Paper';
 import IconButton from '@mui/material/IconButton';
+import Box from '@mui/material/Box';
+import TablePagination from '@mui/material/TablePagination';
 
 // Icons
 import CSVIcon from "../../assets/icons/csv.png";
@@ -35,7 +36,6 @@ import TextBox from '../../components/text-box/TextBox';
 import DatePickerBuddhist from "../../components/date-picker-buddhist/DatePickerBuddhist";
 import AutoComplete from '../../components/auto-complete/AutoComplete';
 import MultiSelectCameras from '../../components/multi-select/MultiSelectCameras';
-import PaginationComponent from '../../components/pagination/Pagination';
 import Image from '../../components/image/Image';
 import ProgressBarWithLabel from "../../components/progress-bar/ProgressBarWithLabel";
 
@@ -51,9 +51,6 @@ import {
   getStringId 
 } from "../../utils/commonFunction"
 import { fetchClient, combineURL } from "../../utils/fetchClient"
-
-// Constant
-import { SUSPECT_PERSON_SEARCH_ROW_PER_PAGES } from "../../constants/dropdown";
 
 // i18n
 import { useTranslation } from 'react-i18next';
@@ -120,6 +117,7 @@ const SearchSuspectPerson: React.FC<SearchSuspectPersonProps> = ({}) => {
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState<string>("");
   const [districtsList, setDistrictsList] = useState<Districts[]>([]);
+  const [dssPage, setDssPage] = useState<Record<string, number>>({});
 
   // Option
   const [camerasOption, setCamerasOption] = useState<{ label: string ,value: any }[]>([]);
@@ -128,12 +126,7 @@ const SearchSuspectPerson: React.FC<SearchSuspectPersonProps> = ({}) => {
   const [districtOptions, setDistrictOptions] = useState<{ label: string ,value: string }[]>([]);
 
   // Pagination
-  const [page, setPage] = useState(1);
-  const [pageInput, setPageInput] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [totalData, setTotalData] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(SUSPECT_PERSON_SEARCH_ROW_PER_PAGES[SUSPECT_PERSON_SEARCH_ROW_PER_PAGES.length - 1]);
-  const [rowsPerPageOptions] = useState(SUSPECT_PERSON_SEARCH_ROW_PER_PAGES);
 
   // i18n
   const { t, i18n } = useTranslation();
@@ -395,43 +388,6 @@ const SearchSuspectPerson: React.FC<SearchSuspectPersonProps> = ({}) => {
       body,
     })
   }
-
-  const handleRowsPerPageChange = async (event: SelectChangeEvent) => {
-    const limit = parseInt(event.target.value)
-    setRowsPerPage(limit);
-    await fetchSearchData(page, limit);
-  };
-
-  const handlePageChange = async (event: React.ChangeEvent<unknown>, value: number) => {
-    event.preventDefault();
-    setPage(value);
-    await fetchSearchData(value, rowsPerPage);
-  };
-
-  const handlePageInputKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-  
-      setPage(pageInput);
-      await fetchSearchData(pageInput, rowsPerPage);
-    }
-  };
-
-  const handlePageInputChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const input = event.target.value;
-    const cleaned = input.replace(/\D/g, '');
-
-    if (cleaned) {
-      const numberInput = Number(cleaned);
-      if (numberInput > 0 && numberInput <= totalPages) {
-        setPageInput(numberInput);
-      }
-    }
-    else if (cleaned === "") {
-      setPageInput(1);
-    }
-    return cleaned;
-  };
 
   const handleNationalIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const input = event.target.value;
@@ -747,10 +703,10 @@ const SearchSuspectPerson: React.FC<SearchSuspectPersonProps> = ({}) => {
   };
 
   const handleSearch = async () => {
-    await fetchSearchData(1, rowsPerPage);
+    await fetchSearchData();
   }
 
-  const fetchSearchData = async (currentPage: number = page, limit: number = rowsPerPage) => {
+  const fetchSearchData = async (currentPage: number = 1, limit: number = 100) => {
     try {
       setIsLoading(true);
       const body = {
@@ -796,8 +752,7 @@ const SearchSuspectPerson: React.FC<SearchSuspectPersonProps> = ({}) => {
       });
 
       if (res.success) {
-        setTotalPages(res.pagination.maxPage);
-        setTotalData(res.data.reduce((acc, curr) => (curr.dss_data?.length > 0 ? acc + 1 : acc), 0));
+        setTotalData(res.pagination.countAll);
         setSuspectPersonSearchList(res.data);
         if (res.data.length === 0) {
           setSuspectPersonSearchList([]);
@@ -816,7 +771,7 @@ const SearchSuspectPerson: React.FC<SearchSuspectPersonProps> = ({}) => {
     }
   }
 
-  const fetchNewData = async (currentPage: number = page, limit: number = rowsPerPage) => {
+  const fetchNewData = async (currentPage: number = 1, limit: number = 100) => {
     try {
       const body = {
         ...(formData.imagesData && {
@@ -1260,18 +1215,28 @@ const SearchSuspectPerson: React.FC<SearchSuspectPersonProps> = ({}) => {
           <TableContainer 
             component={Paper} 
             className='mt-1'
-            sx={{ height: "50vh", backgroundColor: "transparent" }}
+            sx={{ height: "55vh", backgroundColor: "transparent" }}
           >
-            <Table sx={{ minWidth: 650, backgroundColor: "#48494B"}}>
+            <Table 
+              sx={{ 
+                minWidth: 650, 
+                backgroundColor: "#48494B",
+                "& .MuiTableHead-root .MuiTableCell-root": {
+                  backgroundColor: "#242727",
+                  color: "#FFFFFF",
+                },
+              }} 
+              stickyHeader
+            >
               <TableHead>
-                <TableRow sx={{ backgroundColor: "#242727", position: "sticky", top: 0, zIndex: 1 }}>
+                <TableRow>
                   <TableCell />
                   <TableCell align="center" sx={{ color: "#FFFFFF" }}>{t('table.column.no')}</TableCell>
                   <TableCell align="center" sx={{ color: "#FFFFFF" }}>{t('table.column.prefix')}</TableCell>
-                  <TableCell align="center" sx={{ color: "#FFFFFF" }}>{t('table.column.full-name')}</TableCell>
+                  <TableCell align="center" sx={{ color: "#FFFFFF", width: 250 }}>{t('table.column.full-name')}</TableCell>
                   <TableCell align="center" sx={{ color: "#FFFFFF" }}>{t('table.column.image')}</TableCell>
                   <TableCell align="center" sx={{ color: "#FFFFFF" }}>{t('table.column.percentage-match')}</TableCell>
-                  <TableCell align="center" sx={{ color: "#FFFFFF" }}>{t('table.column.checkpoint')}</TableCell>
+                  <TableCell align="center" sx={{ color: "#FFFFFF", width: 200 }}>{t('table.column.checkpoint')}</TableCell>
                   <TableCell align="center" sx={{ color: "#FFFFFF" }}>{t('table.column.date-time-range')}</TableCell>
                   <TableCell align="center" sx={{ color: "#FFFFFF" }}>{t('table.column.person-type-2')}</TableCell>
                   <TableCell align="center" sx={{ color: "#FFFFFF", width: 450 }}>{t('table.column.behavior')}</TableCell>
@@ -1333,100 +1298,161 @@ const SearchSuspectPerson: React.FC<SearchSuspectPersonProps> = ({}) => {
                         }
                       </TableRow>
 
-                      {isOpen &&
-                        data.dss_data.sort((a, b) => Number(b.captureTime) * 1000 - Number(a.captureTime) * 1000).map((dss, dssIndex) => (
-                          <TableRow key={dss.id}>
-                            <TableCell sx={{ backgroundColor: "#1D1F1F", borderBottom: "1px dashed #ADADAD" }}/>
-                            <TableCell sx={{ backgroundColor: "#1D1F1F", color: "#FFFFFF", borderBottom: "1px dashed #ADADAD" }}>
-                              {`${index  + 1}.${dssIndex + 1}`}
-                            </TableCell>
+                      {isOpen && (
+                        <TableRow>
+                          <TableCell
+                            colSpan={10}
+                            sx={{
+                              padding: 0,
+                              borderBottom: "none",
+                              backgroundColor: "#121414",
+                            }}
+                          >
+                            {(() => {
+                              const page = dssPage[data.uid] || 0;
+                              const rowsPerPage = 50;
 
-                            <TableCell
-                              sx={{ backgroundColor: "#121414", color: "#FFFFFF", textAlign: "center", borderBottom: "1px dashed #ADADAD" }}
-                            >
-                            {
-                              (() => {
-                                const prefix = sliceDropdown?.prefix?.data.find(pf => pf.id === data.title_id);
-                                return prefix ? i18n.language === "th" ? prefix.title_th : prefix.title_en : "-";
-                              })()
-                            }
-                            </TableCell>
+                              const sortedData = [...data.dss_data].sort(
+                                (a, b) =>
+                                  Number(b.captureTime) * 1000 -
+                                  Number(a.captureTime) * 1000
+                              );
 
-                            <TableCell sx={{ backgroundColor: "#1D1F1F", color: "#FFFFFF", borderBottom: "1px dashed #ADADAD" }}>{`${data.firstname} ${data.lastname}`}</TableCell>
+                              const paginatedData = sortedData.slice(
+                                page * rowsPerPage,
+                                page * rowsPerPage + rowsPerPage
+                              );
 
-                            <TableCell sx={{ backgroundColor: "#121414", color: "#FFFFFF", borderBottom: "1px dashed #ADADAD" }}>
-                              <div className='flex items-center justify-center space-x-1 h-10'>
-                                <div className='flex'>
-                                  <Image
-                                    imageSrc={dss.faceBase64 || ""} 
-                                    imageAlt={`image`}
-                                    className='w-[60px] h-[60px]'
-                                    backgroundColor="#121414"
-                                  />
-                                </div>
-                              </div>
-                            </TableCell>
+                              return (
+                                <>
+                                  {/* Scrollable Content */}
+                                  <Box
+                                    sx={{
+                                      maxHeight: 300,
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {paginatedData.map((dss, dssIndex) => {
+                                      const prefix =
+                                        sliceDropdown?.prefix?.data.find(
+                                          (pf) => pf.id === data.title_id
+                                        );
 
-                            <TableCell sx={{ backgroundColor: "#1D1F1F", color: "#FFF", textAlign: "center", borderBottom: "1px dashed #ADADAD" }}>
-                              {dss.similarity ? `${dss.similarity} %` : "-"}
-                            </TableCell>
-                            
-                            <TableCell sx={{ backgroundColor: "#121414", color: "#FFF", borderBottom: "1px dashed #ADADAD" }}>
-                              {dss.baseCamera?.camera_name || "-"}
-                            </TableCell>
+                                      const personType =
+                                        personTypesOptions.find(
+                                          (pt) => pt.value === data.person_class_id
+                                        );
 
-                            <TableCell sx={{ backgroundColor: "#1D1F1F", color: "#FFF", textAlign: "center", borderBottom: "1px dashed #ADADAD" }}>
-                              {dayjs
-                                .unix(Number(dss.captureTime))
-                                .format(i18n.language === "th" ? "DD/MM/BBBB HH:mm:ss" : "DD/MM/YYYY HH:mm:ss")}
-                            </TableCell>
+                                      const { color, backgroundColor } =
+                                        getPersonTypeColor(personType?.label || "");
 
-                            <TableCell sx={{ backgroundColor: "#121414", color: "#FFF", borderBottom: "1px dashed #ADADAD" }}>
-                              {
-                                (() => {
-                                  const personType = personTypesOptions.find(pt => pt.value === data.person_class_id);
-                                  const { color, backgroundColor } = getPersonTypeColor(personType?.label || "");
-                                  return (
-                                    <div className='flex justify-center items-center'>
-                                      <label
-                                        className={`w-20 h-[30px] inline-flex items-center justify-center rounded font-bold`}
-                                        style={{ color: color, backgroundColor: backgroundColor }}
-                                      >
-                                        { personType?.label || "-" }
-                                      </label>
-                                    </div>
-                                  )
-                                })()
-                              }
-                            </TableCell>
+                                      return (
+                                        <Box
+                                          key={dss.id}
+                                          sx={{
+                                            display: "grid",
+                                            gridTemplateColumns:
+                                              "80px 90px 125px 250px 65px 190px 195px 150px 160px 1fr",
+                                            alignItems: "center",
+                                            padding: "12px 16px",
+                                            borderBottom: "1px dashed #ADADAD",
+                                            color: "#FFF",
+                                          }}
+                                        >
+                                          <div />
+                                          <div className="text-center">
+                                            {`${index + 1}.${page * rowsPerPage + dssIndex + 1}`}
+                                          </div>
+                                          <div className="text-center">
+                                            {prefix
+                                              ? i18n.language === "th"
+                                                ? prefix.title_th
+                                                : prefix.title_en
+                                              : "-"}
+                                          </div>
+                                          <div className="px-1">{`${data.firstname} ${data.lastname}`}</div>
 
-                            <TableCell sx={{ backgroundColor: "#1D1F1F", color: "#FFF", borderBottom: "1px dashed #ADADAD" }}>
-                              {data.behavior || "-"}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                                          <div>
+                                            <Image
+                                              imageSrc={dss.faceBase64 || ""}
+                                              imageAlt="image"
+                                              className="w-[60px] h-[60px]"
+                                              backgroundColor="#121414"
+                                            />
+                                          </div>
+
+                                          <div className="text-center">
+                                            {dss.similarity ? `${dss.similarity} %` : "-"}
+                                          </div>
+
+                                          <div className="px-1">
+                                            {dss.baseCamera?.camera_name || "-"}
+                                          </div>
+
+                                          <div className="text-center">
+                                            {dayjs
+                                              .unix(Number(dss.captureTime))
+                                              .format(
+                                                i18n.language === "th"
+                                                  ? "DD/MM/BBBB HH:mm:ss"
+                                                  : "DD/MM/YYYY HH:mm:ss"
+                                              )}
+                                          </div>
+
+                                          <div className="flex justify-center">
+                                            <label
+                                              className="w-20 h-[30px] inline-flex items-center justify-center rounded font-bold"
+                                              style={{ color, backgroundColor }}
+                                            >
+                                              {personType?.label || "-"}
+                                            </label>
+                                          </div>
+
+                                          <div className="px-1">{data.behavior || "-"}</div>
+                                        </Box>
+                                      );
+                                    })}
+                                  </Box>
+
+                                  {/* Pagination */}
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      justifyContent: "flex-end",
+                                      padding: "8px 16px",
+                                      backgroundColor: "#1D1F1F",
+                                    }}
+                                  >
+                                    <TablePagination
+                                      component="div"
+                                      count={data.dss_data.length}
+                                      page={page}
+                                      onPageChange={(_, newPage) =>
+                                        setDssPage((prev) => ({
+                                          ...prev,
+                                          [data.uid]: newPage,
+                                        }))
+                                      }
+                                      rowsPerPage={rowsPerPage}
+                                      rowsPerPageOptions={[50]}
+                                      sx={{
+                                        color: "#FFF",
+                                        "& .MuiSvgIcon-root": { color: "#FFF" },
+                                      }}
+                                    />
+                                  </Box>
+                                </>
+                              );
+                            })()}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </React.Fragment>
                   );
                 })}
               </TableBody>
-
-
             </Table>
           </TableContainer>
-
-          <div className={`${suspectPersonSearchList.length > 0 ? "flex" : "hidden"} items-center justify-between bg-(--background-color) py-3 pl-1 sticky bottom-0`}>
-            <PaginationComponent 
-              page={page} 
-              onChange={handlePageChange}
-              rowsPerPage={rowsPerPage}
-              rowsPerPageOptions={rowsPerPageOptions}
-              handleRowsPerPageChange={handleRowsPerPageChange}
-              totalPages={totalPages}
-              pageInput={pageInput.toString()}
-              handlePageInputKeyDown={handlePageInputKeyDown}
-              handlePageInputChange={handlePageInputChange}
-            />
-          </div>
         </div>
       </form>
       {

@@ -275,6 +275,8 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
 
 
   const fetchData = async () => {
+    let allCameraList: Camera[] = [];
+
     try {
       const lprCameraRes = await fetchClient<CameraResponse>(combineURL(CENTER_API, "/cameras/get"), {
         method: "GET",
@@ -283,8 +285,6 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
           limit: "1000",
         },
       });
-
-      let allCameraList: Camera[] = [];
 
       if (lprCameraRes.success) {
         const updated = lprCameraRes.data.map((row) => ({
@@ -316,6 +316,9 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       PopupMessage(t('message.error.error-while-fetching-data'), errorMessage, "error");
+    }
+    finally {
+      setCameraList(allCameraList);
     }
   };
 
@@ -644,10 +647,15 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
 
   const createFeedFaceInfo = (data: any, index: number, key: string) => {
     const watchList = data.watchlist || undefined;
-    const prefix = sliceDropdown.prefix?.data.find(prefix => prefix.id === watchList?.title_id);
-    const newPrefix = i18n.language === "th"
-      ? prefix?.title_th || ""
-      : prefix?.title_en || "";
+    let prefix = undefined;
+    let newPrefix = "";
+    if (watchList) {
+      prefix = sliceDropdown.prefix?.data.find(prefix => prefix.id === watchList?.title_id);
+      newPrefix = i18n.language === "th"
+        ? prefix?.title_th || ""
+        : prefix?.title_en || "";
+    }
+    
     return (
       <FeedCard key={key} id={data.id} index={index}>
         <p

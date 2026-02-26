@@ -9,7 +9,7 @@ import ImagesCarousel from '../../components/images-carousel/ImagesCarousel';
 interface ShowLargeImageProps {
   open: boolean;
   onClose: () => void;
-  plate: string;
+  plate?: string;
   images: { name: string; url: string; className?: string }[];
 }
 

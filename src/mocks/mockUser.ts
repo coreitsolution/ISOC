@@ -50,6 +50,12 @@ export const mockUsers: User[] = Array.from({ length: 5 }, (_, index) => ({
       settingFace: {
         select: true,
       },
+      multiDetectSearch: {
+        select: true,
+      },
+      multiRealtime: {
+        select: true,
+      },
     },
     checkpoint: {
       realtime: {

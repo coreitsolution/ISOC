@@ -24,7 +24,7 @@ import SpecialPlateScreen from './modules/special-plate/SpecialPlate';
 import UserInfo from './modules/user-info/UserInfo';
 import Setting from './modules/setting/Setting';
 import SettingFace from './modules/setting-face/SettingFace';
-// import SearchMultiDetect from './modules/search-multi-detect/SearchMultiDetect';
+import SearchMultiDetect from './modules/search-multi-detect/SearchMultiDetect';
 // import ManageLog from './modules/manage-log/ManageLog';
 // import UsageStatisticsGraph from './modules/usage-statistics-graph/UsageStatisticsGraph';
 // import EndUser from './modules/end-user/EndUser';
@@ -32,6 +32,7 @@ import SettingFace from './modules/setting-face/SettingFace';
 // import CameraStatus from './modules/camera-status/CameraStatus';
 // import ManageCheckpointCameras from './modules/manage-checkpoint-cameras/ManageCheckpointCameras';
 import SuspectPeoplePage from './modules/suspect-people/SuspectPeople';
+import MultiRealTimeMonitor from './modules/real-time-monitor/RealTimeMonitor';
 
 // API
 import { clearError } from './features/auth/authSlice';
@@ -439,7 +440,7 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
     dispatch(upsertRealtimeData(updatedData));
   }, [dispatch, sliceDropdown.plateTypes, sliceSpecialPlate.specialPlates]);
 
-  const handleFaceRealtimeMessage = useCallback(async (message: any) => {
+  const handleSuspectFaceRealtimeMessage = useCallback(async (message: any) => {
     const specialPersonName = message.watchlist.person_class_id ? await getPersonClassName(message.watchlist?.person_class_id, sliceDropdown.personTypes) : "";
 
     const { backgroundColor, title, pinBackgroundColor, showAlert, textShadow, feedBackgroundColor, color } = await getPersonTypeColor(specialPersonName);
@@ -450,9 +451,9 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
 
     const updatedData = {
       ...message,
-      plate_class_name: specialPersonName,
-      special_plate_remark: message.watchlist?.behavior || "-",
-      special_plate_owner_name: message.watchlist?.case_owner_name || "-",
+      person_class_name: specialPersonName,
+      special_person_remark: message.watchlist?.behavior || "-",
+      special_person_owner_name: message.watchlist?.case_owner_name || "-",
       title_name: title,
       color: isBlacklist ? backgroundColor : "#FDCC0A",
       pin_background_color: isBlacklist ? pinBackgroundColor : "#FDCC0A",
@@ -465,6 +466,25 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
     }
     dispatch(upsertRealtimeData(updatedData));
     dispatch(addToastMessage(updatedData));
+  }, [dispatch, sliceDropdown.personTypes, sliceSuspectPeople.suspectPeople]);
+
+  const handleFaceRealtimeMessage = useCallback(async (message: any) => {
+    const updatedData = {
+      ...message,
+      person_class_name: "-",
+      special_person_remark: message.watchlist?.behavior || "-",
+      special_person_owner_name: message.watchlist?.case_owner_name || "-",
+      title_name: "",
+      color: "#FDCC0A",
+      pin_background_color: "#FDCC0A",
+      text_shadow: "",
+      feedBackgroundColor: "#161817",
+      feedTextColor: "white",
+      detect_type: "face",
+      watchList: message.watchlist,
+      epoch_end: message.alarm_date,
+    }
+    dispatch(upsertRealtimeData(updatedData));
   }, [dispatch, sliceDropdown.personTypes, sliceSuspectPeople.suspectPeople]);
 
   const handleCheckpointDataMessage = (message: Checkpoint) => {
@@ -609,6 +629,14 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
     CENTER_SERVER_SENT_EVENTS_URL,
     CENTER_SERVER_SENT_EVENTS_TOKEN,
     "watchlist_detect_event",
+    handleSuspectFaceRealtimeMessage,
+    enabled
+  );
+
+  useSse(
+    CENTER_SERVER_SENT_EVENTS_URL,
+    CENTER_SERVER_SENT_EVENTS_TOKEN,
+    "face_data_event",
     handleFaceRealtimeMessage,
     enabled
   );
@@ -791,16 +819,26 @@ function App() {
               <SettingFace />
             </ProtectedRoute>
           }></Route>
-          {/* <Route path='center/search-multi-detect' element={
+          <Route path='center/search-multi-detect' element={
             <ProtectedRoute 
               permission={authData?.userInfo?.permissions
                 ? authData.userInfo.permissions.center.multiDetectSearch?.select
-                : true
+                : undefined
               }
             >
               <SearchMultiDetect />
             </ProtectedRoute>
-          }></Route> */}
+          }></Route>
+          <Route path='center/multi-realtime' element={
+            <ProtectedRoute 
+              permission={authData?.userInfo?.permissions
+                ? authData.userInfo.permissions.center.multiRealtime?.select
+                : undefined
+              }
+            >
+              <MultiRealTimeMonitor />
+            </ProtectedRoute>
+          }></Route>
           {/*  
             <Route path='center/manage-checkpoint-cameras' element={
               <ProtectedRoute 

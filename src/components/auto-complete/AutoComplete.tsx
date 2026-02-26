@@ -110,7 +110,7 @@ const AutoComplete: React.FC<AutoCompleteProps> = ({
         }
       </Typography>
       <Autocomplete
-        disablePortal
+        disablePortal={false}
         freeSolo={freeSolo}
         value={
           freeSolo

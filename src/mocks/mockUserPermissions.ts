@@ -32,6 +32,12 @@ export const mockUserPermission: UserPermission[] = [
       settingFace: {
         select: true,
       },
+      multiDetectSearch: {
+        select: true,
+      },
+      multiRealtime: {
+        select: true,
+      },
     },
     checkpoint: {
       realtime: {
@@ -78,6 +84,12 @@ export const mockUserPermission: UserPermission[] = [
       settingFace: {
         select: true,
       },
+      multiDetectSearch: {
+        select: true,
+      },
+      multiRealtime: {
+        select: true,
+      },
     },
     checkpoint: {
       realtime: {
@@ -122,6 +134,12 @@ export const mockUserPermission: UserPermission[] = [
         select: true,
       },
       settingFace: {
+        select: true,
+      },
+      multiDetectSearch: {
+        select: true,
+      },
+      multiRealtime: {
         select: true,
       },
     },

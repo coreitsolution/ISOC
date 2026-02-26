@@ -332,11 +332,12 @@ export interface CenterPermissions {
   specialPlateManage: PermissionDetail;
   suspectPersonManage: PermissionDetail;
   suspectPersonSearch: PermissionDetail;
-  // multiDetectSearch: PermissionDetail;
+  multiDetectSearch: PermissionDetail;
   manageUser: PermissionDetail;
   setting: PermissionDetail;
   settingFace: PermissionDetail;
   manageCheckpointCameras: PermissionDetail;
+  multiRealtime: PermissionDetail;
 }
 
 export type CenterPermissionKey = keyof CenterPermissions;

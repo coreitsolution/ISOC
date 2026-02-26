@@ -35,6 +35,12 @@ export const mockUserGroups: UserGroup[] = [
         settingFace: {
           select: true,
         },
+        multiDetectSearch: {
+          select: true,
+        },
+        multiRealtime: {
+          select: true,
+        },
       },
       checkpoint: {
         realtime: {
@@ -87,6 +93,12 @@ export const mockUserGroups: UserGroup[] = [
         settingFace: {
           select: true,
         },
+        multiDetectSearch: {
+          select: true,
+        },
+        multiRealtime: {
+          select: true,
+        },
       },
       checkpoint: {
         realtime: {
@@ -137,6 +149,12 @@ export const mockUserGroups: UserGroup[] = [
           select: true,
         },
         settingFace: {
+          select: true,
+        },
+        multiDetectSearch: {
+          select: true,
+        },
+        multiRealtime: {
           select: true,
         },
       },

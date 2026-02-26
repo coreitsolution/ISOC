@@ -877,3 +877,13 @@ export interface VerifyLicenseResponse {
   message: string;
   data?: VerifyLicense;
 }
+
+export interface DetectDropdown {
+  id: number;
+  text_th: string;
+  text_en: string;
+  value: string;
+  iconButton?: React.ElementType;
+  width?: string;
+  height?: string;
+}

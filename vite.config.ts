@@ -10,10 +10,7 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     react(),
-    svgr({
-      svgrOptions: { exportType: "default", ref: true, svgo: false, titleProp: true },
-      include: "**/*.svg",
-    }),
+    svgr(),
     Icons({
       compiler: 'jsx',
       jsx: 'react',

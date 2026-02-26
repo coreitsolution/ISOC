@@ -59,9 +59,8 @@
     "add-new-suspect-person": "เพิ่มบุคคลต้องสงสัย",
     "add-new-suspect-person-width": "180px",
     "download-template": "ดาวน์โหลด Template",
-    "vehicle": "ยานพาหนะ",
-    "face": "ตรวจจับใบหน้า",
-    "object": "วัตถุ"
+    "vehicle": "ตรวจจับยานพาหนะ",
+    "human": "ตรวจจับบุคคล"
   },
   "accordion": {
     "search-condition": "เงื่อนไขการค้นหา"
@@ -96,6 +95,7 @@
     "agency": "หน่วยงาน",
     "pass-area": "ผ่านในพื้นที่",
     "car-brand": "ยี่ห้อรถ",
+    "car-type": "ประเภทรถ",
     "car-color": "สีรถ",
     "start-time": "วัน/เวลา เริ่มต้น",
     "end-time": "วัน/เวลา สิ้นสุด",
@@ -156,7 +156,24 @@
     "id-card-number": "หมายเลขบัตรประชาชน",
     "address": "ที่อยู่",
     "zipcode": "รหัสไปรษณีย์",
-    "select-checkpoint": "เลือก Checkpoint เพื่อซิงค์ข้อมูล"
+    "select-checkpoint": "เลือก Checkpoint เพื่อซิงค์ข้อมูล",
+    "suspect-list": "รายการต้องสงสัย",
+    "color": "สี",
+    "other": "อื่นๆ",
+    "glasses": "แว่น",
+    "bag": "กระเป๋า",
+    "bag-type": "ประเภทกระเป๋า",
+    "hat": "หมวก",
+    "hat-type": "ประเภทหมวก",
+    "coat": "เสื้อ",
+    "coat-color": "สีเสื้อ",
+    "mask": "หน้ากาก",
+    "beard": "หนวดเครา",
+    "trousers": "กางเกง",
+    "trousers-color": "สีกางเกง",
+    "emotion": "อารมณ์",
+    "age": "อายุ",
+    "gender": "เพศ"
   },
   "placeholder": {
     "checkpoint-station": "ค้นหาจุดตรวจชื่อด่าน",
@@ -173,6 +190,7 @@
     "agency-text": "กรุณาใส่หน่วยงาน",
     "pass-area": "กรุณาเลือกผ่านในพื้นที่",
     "car-brand": "กรุณาเลือกยี่ห้อรถยนต์",
+    "car-type": "กรุณาเลือกประเภทรถยนต์",
     "car-color": "กรุณาเลือกสีรถ",
     "date-time": "วว/ดด/ปปปป ชช:นน",
     "date": "วว/ดด/ปปปป",
@@ -230,7 +248,23 @@
     "id-card-number": "กรุณาใส่หมายเลขบัตรประชาชน",
     "address": "กรุณาใส่ที่อยู่",
     "zipcode": "กรุณาใส่รหัสไปรษณีย์",
-    "select-checkpoint": "เลือก Checkpoint เพื่อซิงค์ข้อมูล"
+    "select-checkpoint": "เลือก Checkpoint เพื่อซิงค์ข้อมูล",
+    "color": "กรุณาเลือกสี",
+    "other": "กรุณาใส่อื่นๆ",
+    "glasses": "กรุณาเลือกแว่น",
+    "bag": "กรุณาเลือกกระเป๋า",
+    "bag-type": "กรุณาเลือกประเภทกระเป๋า",
+    "hat": "กรุณาเลือกหมวก",
+    "hat-type": "กรุณาเลือกประเภทหมวก",
+    "coat": "กรุณาเลือกเสื้อ",
+    "coat-color": "กรุณาเลือกสีเสื้อ",
+    "mask": "กรุณาเลือกหน้ากาก",
+    "beard": "กรุณาเลือกหนวดเครา",
+    "trousers": "กรุณาเลือกกางเกง",
+    "trousers-color": "กรุณาเลือกสีกางเกง",
+    "emotion": "กรุณาเลือกอารมณ์",
+    "age": "กรุณาเลือกอายุ",
+    "gender": "กรุณาเลือกเพศ"
   },
   "screen": {
     "real-time": {
@@ -312,6 +346,9 @@
     },
     "search-multi-detect": {
       "title": "ตรวจหาวัตถุต้องสงสัย"
+    },
+    "multi-realtime": {
+      "title": "ระบบ Monitor Multi Detection แบบ Real-Time"
     }
   },
   "feed-data": {
@@ -403,7 +440,9 @@
       "suspect-person-image": "รูปบุคคล",
       "zipcode": "รหัสไปรษณีย์",
       "percentage-match": "ความแม่นยำ (%)",
-      "destination-checkpoint": "ซิงค์ไปที่"
+      "destination-checkpoint": "ซิงค์ไปที่",
+      "detect-mode": "โหมดการตรวจจับ",
+      "detail": "รายละเอียด"
     }
   },
   "pagination": {
@@ -447,6 +486,8 @@
     "ct-checkpoint-cameras": "จัดการข้อมูลกล้อง Checkpoint",
     "ct-chart": "ข้อมูลสถิติ",
     "ct-setting-face": "ข้อมูลการตั้งค่ากล้อง Face",
+    "ct-search-multi-detect": "ตรวจหาวัตถุต้องสงสัย",
+    "ct-multi-realtime": "ระบบวิเคราะห์การตรวจจับหลายรายการแบบ Real-Time",
     "cp-real-time": "ระบบวิเคราะห์ยานพาหนะแบบ Real-Time",
     "cp-special-plate-search": "รายการทะเบียนรถที่ตรวจอ่านได้",
     "cp-special-plate-manage": "การจัดการรายการทะเบียนพิเศษ",
@@ -522,7 +563,33 @@
     "select-camera-list": "รายการกล้องที่ถูกเลือก",
     "no-camera": "ไม่มีวิดีโอ",
     "image-size-detail": "ขนาดภาพต้องไม่เกิน 540 × 1080 พิกเซล",
-    "detect": "ตรวจจับได้"
+    "detect": "ตรวจจับได้",
+    "detect-human-detail": "รายละเอียดการตรวจจับบุคคล",
+    "detect-human-selected-detail": "การเลือกข้อมูลการตรวจจับบุคคล",
+    "detect-vehicle-detail": "รายละเอียดการตรวจจับยานพาหนะ",
+    "detect-vehicle-selected-detail": "การเลือกข้อมูลการตรวจจับยานพาหนะ",
+    "human": "บุคคล",
+    "vehicle": "ยานพาหนะ",
+    "detail": "รายละเอียด",
+    "to": "ถึง",
+    "years": "ปี",
+    "car-type": "ประเภทรถ",
+    "car-brand": "ยี่ห้อรถ",
+    "car-color": "สี",
+    "glasses": "แว่น",
+    "bag": "กระเป๋า",
+    "bag-type": "ประเภทกระเป๋า",
+    "hat": "หมวก",
+    "hat-type": "ประเภทหมวก",
+    "coat": "เสื้อ",
+    "coat-color": "สีเสื้อ",
+    "mask": "หน้ากาก",
+    "beard": "หนวดเครา",
+    "trousers": "กางเกง",
+    "trousers-color": "สีกางเกง",
+    "emotion": "อารมณ์",
+    "age": "อายุ",
+    "gender": "เพศ"
   },
   "alert": {
     "save-success": "บันทึกการเปลี่ยนแปลงสำเร็จ",
@@ -652,11 +719,27 @@
       "person-type": "ประเภทบุคคล",
       "behavior": "พฤติการณ์",
       "owner-name": "เจ้าของข้อมูล",
-      "phone-2": "เบอร์โทร"
+      "phone-2": "เบอร์โทร",
+      "color": "สี",
+      "glasses": "แว่น",
+      "bag": "กระเป๋า",
+      "bag-type": "ประเภทกระเป๋า",
+      "hat": "หมวก",
+      "hat-type": "ประเภทหมวก",
+      "coat": "เสื้อ",
+      "coat-color": "สีเสื้อ",
+      "mask": "หน้ากาก",
+      "beard": "หนวดเครา",
+      "trousers": "กางเกง",
+      "trousers-color": "สีกางเกง",
+      "emotion": "อารมณ์",
+      "age": "อายุ",
+      "gender": "เพศ"
     }
   },
   "file": {
     "search-with-condition": "รายงานตรวจหาทะเบียนแบบมีเงื่อนไข",
+    "search-multi-detect": "รายงานตรวจหาวัตถุต้องสงสัย",
     "user-list": "รายการผู้ใช้งาน",
     "suspect-people": "รายงานตรวจหาบุคคลต้องสงสัย",
     "statistic-data": "รายงานข้อมูลสถิติ"
@@ -664,6 +747,7 @@
   "pdf": {
     "search-with-condition": "รายงานยานพาหนะ ตรวจหาทะเบียนแบบมีเงื่อนไข",
     "search-with-condition-route": "รายงานตรวจหาทะเบียนแบบมีเงื่อนไข",
+    "search-multi-detect": "รายงานตรวจหาวัตถุต้องสงสัย",
     "suspect-people": "รายงานตรวจหาบุคคลต้องสงสัย",
     "statistic-data": "รายงานข้อมูลสถิติ",
     "print-date": "พิมพ์เมื่อ",
@@ -736,6 +820,26 @@
       "total-volume": "ปริมาณทั้งหมด",
       "date": "วันที่",
       "special-plate": "ประเภททะเบียนพิเศษ"
+    }
+  },
+  "radio-button": {
+    "wear-glasses": "ใส่แว่น",
+    "wear-bag": "สวมกระเป๋า",
+    "wear-hat": "ใส่หมวก",
+    "wear-coat": "ใส่เสื้อคลุม",
+    "wear-mask": "สวมหน้ากาก",
+    "wear-trousers": "สวมกางเกงขายาว",
+    "have-beards": "มีหนวด",
+    "gender": "เพศ",
+    "emotion": "อารมณ์",
+    "value": {
+      "yes": "ใช่",
+      "no": "ไม่ใช่",
+      "specify": "ระบุ",
+      "not-specify": "ไม่ระบุ",
+      "male": "ชาย",
+      "female": "หญิง",
+      "unknown": "ไม่ระบุ"
     }
   }
 }

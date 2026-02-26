@@ -9,7 +9,7 @@ import {
 } from '../ui/carousel';
 
 interface ImagesCarouselProps {
-  plate: string;
+  plate?: string;
   images: { name: string; url: string; className?: string }[];
 }
 
@@ -32,9 +32,13 @@ const ImagesCarousel: React.FC<ImagesCarouselProps> = ({ plate, images }) => {
                   alt={image.name}
                   className={`${image.className} w-[700px] h-[500px] object-contain`}
                 />
-                <p className="text-white text-[30px] font-semibold px-4 py-1 rounded">
-                  {plate}
-                </p>
+                {
+                  plate && (
+                    <p className="text-white text-[30px] font-semibold px-4 py-1 rounded">
+                      {plate}
+                    </p>
+                  )
+                }
               </CardContent>
             </Card>
           </CarouselItem>
