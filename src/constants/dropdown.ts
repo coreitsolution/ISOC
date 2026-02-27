@@ -1420,12 +1420,6 @@ export const VEHICLE_MAKE: DetectDropdown[] = [
     "text_en": "unknown",
     "value": "unknown"
   },
-  {
-    "id": 203,
-    "text_th": "ไม่สามารถระบุได้",
-    "text_en": "Unrecognized",
-    "value": "unrecognized"
-  },
 ];
 
 export const VEHICLE_TYPE: DetectDropdown[] = [

@@ -9,6 +9,7 @@ interface FeedImagesProps {
   image2Alt: string;
   isShowOnlyImage1?: boolean;
   isFace?: boolean;
+  isMulti?: boolean;
 }
 
 const FeedImages: React.FC<FeedImagesProps> = ({
@@ -18,6 +19,7 @@ const FeedImages: React.FC<FeedImagesProps> = ({
   image2Alt,
   isShowOnlyImage1 = false,
   isFace = false,
+  isMulti = false,
 }) => {
   const { CENTER_FILE_URL } = getUrls();
 
@@ -25,7 +27,7 @@ const FeedImages: React.FC<FeedImagesProps> = ({
     <div
       className={`grid ${
         isShowOnlyImage1 ? "grid-cols-1" : "grid-cols-2"
-      } h-[130px]`}
+      } h-[130px] w-full`}
     >
       {
         isFace ? (
@@ -33,7 +35,7 @@ const FeedImages: React.FC<FeedImagesProps> = ({
             <FaceImage
               imageSrc={`${CENTER_FILE_URL}${image1}`}
               imageAlt={image1Alt}
-              className="h-[130px] w-full object-cover"
+              className={`${isShowOnlyImage1 ? "w-[142px]" : "w-full"} h-[130px] object-cover`}
             />
 
             {!isShowOnlyImage1 && (
@@ -56,7 +58,7 @@ const FeedImages: React.FC<FeedImagesProps> = ({
             <Image
               imageSrc={`${CENTER_FILE_URL}${image2}`}
               imageAlt={image2Alt}
-              className="h-[65px] w-full object-cover"
+              className={`${isMulti ? "h-[130px]" : "h-[65px]"} w-full object-cover`}
             />
           </>
         )

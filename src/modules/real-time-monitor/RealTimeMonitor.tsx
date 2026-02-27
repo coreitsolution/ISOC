@@ -334,7 +334,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
       if (shownToastsRef.current.includes(uniqueKey)) continue;
 
       const cameraMatched = selectedCameraIds.find(
-        (camera) => camera.uid === (data.detect_type === "face" ? (data as any).base_camera?.uid : data.camera_uid)
+        (camera) => camera.uid === (data.detect_type === "face" ? (data as any).base_camera?.uid || (data as any).camera_uid: data.camera_uid)
       );
       if (data.detect_type === "lpr" && !cameraMatched) continue;
 
@@ -367,7 +367,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
         
       setNotificationList((prev) => {
         const newMap = new Map(prev);
-        const key = !isLpr ? (data as any).base_camera?.uid : data.camera_uid;
+        const key = !isLpr ? (data as any).base_camera?.uid || (data as any).camera_uid : data.camera_uid;
         const existing = newMap.get(key) || [];
 
         newMap.set(key, [
@@ -406,7 +406,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
             textShadow={data.text_shadow}
             type={data.detect_type}
             onDelete={async () => {
-              const cameraUid = !isLpr ? (data as any).base_camera?.uid : data.camera_uid;
+              const cameraUid = !isLpr ? (data as any).base_camera?.uid || (data as any).camera_uid : data.camera_uid;
 
               setNotificationList((prev) => {
                 const newMap = new Map(prev);
@@ -631,7 +631,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
                 { label: t('feed-data.model'), value: data.vehicle_model },
               ].map(({ label, value }, idx) => (
                 <div className="flex" key={idx}>
-                  <span className="w-[55px] text-left">{label}</span>
+                  <span className="w-[65px] text-left">{label}</span>
                   <span className="mx-1">:</span>
                   <span className="w-[135px] truncate" title={reformatString(value)}>
                     {reformatString(value)}
@@ -670,17 +670,19 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
         </p>
 
         {/* Checkpoint */}
-        <div className='pl-[30px] col-span-2'>{`${t('text.checkpoint')}: ${data.base_camera?.camera_name || "-"}`}</div>
+        <div className='pl-[30px] col-span-2'>{`${t('text.checkpoint')}: ${data.base_camera?.camera_name || (data as any).camera_name || "-"}`}</div>
 
         {/* Images */}
-        <FeedImages 
-          image1={data.capture_image_url}
-          image1Alt={"Detect Image"}
-          image2={data.person_image_url}
-          image2Alt={"Upload Image"}
-          isShowOnlyImage1={watchList ? false : true}
-          isFace={true}
-        />
+        <div className={!watchList ? 'flex items-center justify-center h-[130px]' : ''}>
+          <FeedImages 
+            image1={data.capture_image_url}
+            image1Alt="Detect Image"
+            image2={data.person_image_url}
+            image2Alt="Upload Image"
+            isShowOnlyImage1={!watchList}
+            isFace={true}
+          />
+        </div>
 
         {/* Behavior Info */}
         <div className="w-full h-full bg-[#161817]">
@@ -906,7 +908,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
               {
                 realtimeData
                   .filter((data) => {
-                    const isCameraMatched = prevCameraIds.some((cam) => cam.uid === (data.detect_type === "face" ? (data as any).base_camera?.uid : data.camera_uid));
+                    const isCameraMatched = prevCameraIds.some((cam) => cam.uid === (data.detect_type === "face" ? (data as any).base_camera?.uid || (data as any).camera_uid : data.camera_uid));
                     if (!isCameraMatched) return false;
 
                     const isFaceMatch = data.detect_type === "face" && isShowFace;

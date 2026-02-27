@@ -115,7 +115,9 @@ export interface RealTimeFaceData {
   camera_uid: string;
   detect_type: string;
   detect_image_url: string;
+  capture_image_url: string;
   upload_image_url: string;
+  person_image_url: string;
   first_name: string;
   last_name: string;
   epoch_end: string;
@@ -131,6 +133,7 @@ export interface RealTimeFaceData {
   face_confidence: string;
   feedBackgroundColor: string;
   feedColor: string;
+  personType: string;
 }
 
 export interface RealTimeLprDataResponse {
@@ -588,6 +591,7 @@ export interface Camera {
   checkpoint_name: string
   organization: string
   camera_ip: string
+  channel_id: string
   alpr_cam_id: number
   checkpoint_uid: string
   province_code: string
@@ -886,4 +890,74 @@ export interface DetectDropdown {
   iconButton?: React.ElementType;
   width?: string;
   height?: string;
+}
+
+export interface HumanDetection {
+  id: number;
+  age?: number | null;
+  gender?: string | null;
+  capture_time: string;
+  channel_id?: string | null;
+  detect_mode?: string | null;
+  direction?: string | null;
+  emotion?: string | null;
+  glasses?: string | null;
+  hat?: string | null;
+  hat_type?: string | null;
+  beard?: string | null;
+  mask?: string | null;
+  bag?: string | null;
+  bag_type?: string | null;
+  coat?: string | null;
+  coat_color?: string | null;
+  trousers?: string | null;
+  trousers_color?: string | null;
+  face_image_top?: number | null;
+  face_image_right?: number | null;
+  face_image_left?: number | null;
+  face_image_bottom?: number | null;
+  face_image_url?: string | null;
+  human_image_top?: number | null;
+  human_image_right?: number | null;
+  human_image_left?: number | null;
+  human_image_bottom?: number | null;
+  human_image_url?: string | null;
+  picture_url?: string | null;
+  method?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  detect_type?: string;
+  pin_background_color: string;
+  feedBackgroundColor: string;
+  feedColor: string;
+}
+
+export interface VehicleDetection {
+  id: number;
+  capture_time: string;
+  channel_id?: string | null;
+  detect_mode?: string | null;
+  direction?: string | null;
+  car_brand?: string | null;
+  car_color?: string | null;
+  car_type?: string | null;
+  plate?: string | null;
+  plate_color?: string | null;
+  face_infos?: HumanDetection[];
+  rider_number?: number | null;
+  car_image_top?: number | null;
+  car_image_right?: number | null;
+  car_image_left?: number | null;
+  car_image_bottom?: number | null;
+  car_image_url?: string | null;
+  plate_image_url?: string | null;
+  vehicle_image_url?: string | null;
+  picture_url?: string | null;
+  method?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null; 
+  detect_type?: string;
+  pin_background_color: string;
+  feedBackgroundColor: string;
+  feedColor: string;
 }

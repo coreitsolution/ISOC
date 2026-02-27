@@ -227,8 +227,6 @@ const SearchMultiDetect: React.FC<SearchMultiDetectProps> = ({}) => {
     clearErrors,
   } = useForm();
 
-  const sliceDropdown = useSelector((state: RootState) => state.dropdownData);
-
   const cameraRefreshKey = useSelector(
     (state: RootState) => state.refresh.cameraRefreshKey,
   );
@@ -270,18 +268,24 @@ const SearchMultiDetect: React.FC<SearchMultiDetectProps> = ({}) => {
 
   useEffect(() => {
     setSelectedCameraObjects([{ label: t("dropdown.all"), value: "0" }]);
-    setCarColorsOptions([{ label: t("dropdown.all"), value: "0" }, ...VEHICLE_COLOR.map((row) => ({
-      label: i18n.language === "th" ? row.text_th : reformatString(row.text_en),
-      value: row.value,
-    }))]);
-    setCarMakesOptions([{ label: t("dropdown.all"), value: "0" }, ...VEHICLE_MAKE.map((row) => ({
-      label: i18n.language === "th" ? row.text_th : reformatString(row.text_en),
-      value: row.value,
-    }))]);
-    setCarTypesOptions([{ label: t("dropdown.all"), value: "0" }, ...VEHICLE_TYPE.map((row) => ({
-      label: i18n.language === "th" ? row.text_th : reformatString(row.text_en),
-      value: row.value,
-    }))]);
+    setCarColorsOptions(
+      VEHICLE_COLOR.map((row) => ({
+        label: i18n.language === "th" ? row.text_th : reformatString(row.text_en),
+        value: row.text_en,
+      }))
+    );
+    setCarMakesOptions(
+      VEHICLE_MAKE.map((row) => ({
+        label: i18n.language === "th" ? row.text_th : reformatString(row.text_en),
+        value: row.text_en,
+      }))
+    );
+    setCarTypesOptions(
+      VEHICLE_TYPE.map((row) => ({
+        label: i18n.language === "th" ? row.text_th : reformatString(row.text_en),
+        value: row.text_en,
+      }))
+    );
 
     setBagOptions(
       BAG.map((row) => ({
@@ -404,39 +408,6 @@ const SearchMultiDetect: React.FC<SearchMultiDetectProps> = ({}) => {
       setCamerasOption([{ label: t("dropdown.all"), value: "0" }, ...options]);
     }
   }, [cameraList, i18n.language, i18n.isInitialized]);
-
-  useEffect(() => {
-    if (sliceDropdown.vehicleColors && sliceDropdown.vehicleColors.data) {
-      const options = sliceDropdown.vehicleColors.data.map((row) => ({
-        label: i18n.language === "th" ? row.color_th || "" : row.color_en || "",
-        value: row.color,
-      }));
-      setCarColorsOptions(options);
-    }
-  }, [sliceDropdown.vehicleColors, i18n.language, i18n.isInitialized]);
-
-  useEffect(() => {
-    if (sliceDropdown.vehicleMakes && sliceDropdown.vehicleMakes.data) {
-      const options = sliceDropdown.vehicleMakes.data.map((row) => ({
-        label: row.make_en,
-        value: row.make,
-      }));
-      setCarMakesOptions(options);
-    }
-  }, [sliceDropdown.vehicleMakes]);
-
-  useEffect(() => {
-    if (sliceDropdown.vehicleBodyTypes && sliceDropdown.vehicleBodyTypes.data) {
-      const options = sliceDropdown.vehicleBodyTypes.data.map((row) => ({
-        label:
-          i18n.language === "th"
-            ? row.body_type_th || ""
-            : row.body_type_en || "",
-        value: row.body_type,
-      }));
-      setCarTypesOptions(options);
-    }
-  }, [sliceDropdown.vehicleMakes, i18n.language, i18n.isInitialized]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -691,6 +662,8 @@ const SearchMultiDetect: React.FC<SearchMultiDetectProps> = ({}) => {
         errorMessage,
         "error",
       );
+    } finally {
+      setPageLoading(false);
     }
   };
 
@@ -768,78 +741,96 @@ const SearchMultiDetect: React.FC<SearchMultiDetectProps> = ({}) => {
         "error",
       );
     } finally {
+      setProgress(0);
+      setProgressMessage("");
       setPageLoading(false);
     }
   };
 
   const exportToPdf = async () => {
-    if (totalData > CHUNK_SIZE) {
-      const confirmed = await PopupMessageCustomTextWithCancel(
-        t("message.warning.export-all-confirmation"),
-        t("message.warning.export-all-confirmation-message", {
-          totalNumber: totalData,
-        }),
-        t("button.confirm"),
-        t("button.cancel"),
-        "warning",
-        "#FDB600",
+    try {
+      if (totalData > CHUNK_SIZE) {
+        const confirmed = await PopupMessageCustomTextWithCancel(
+          t("message.warning.export-all-confirmation"),
+          t("message.warning.export-all-confirmation-message", {
+            totalNumber: totalData,
+          }),
+          t("button.confirm"),
+          t("button.cancel"),
+          "warning",
+          "#FDB600",
+        );
+
+        if (!confirmed) return;
+
+        await handleExportAllDataInPdfConfirm();
+        return;
+      }
+
+      setPageLoading(true);
+      setProgress(0);
+      setProgressMessage(t("progress-bar.data-downloading"));
+
+      const response = await fetchNewData(1, CHUNK_SIZE);
+
+      setProgress(80);
+      setProgressMessage(t("progress-bar.pdf-file-preparing"));
+
+      const updateData = response.data.map((item) => {
+        return {
+          ...item,
+          details: {
+            car_brand: getLabelFromValue("car_brand", item.details.car_brand || "") || "-",
+            car_color: getLabelFromValue("car_color", item.details.car_color || "") || "-",
+            car_type: getLabelFromValue("car_type", item.details.car_type || "") || "-",
+            age: item.details.age,
+            glasses: getLabelFromValue("glasses", item.details.glasses || "") || "-",
+            bag: getLabelFromValue("bag", item.details.bag || "") || "-",
+            bag_type: getLabelFromValue("bag_type", item.details.bag_type || "") || "-",
+            hat: getLabelFromValue("hat", item.details.hat || "") || "-",
+            hat_type: getLabelFromValue("hat_type", item.details.hat_type || "") || "-",
+            coat: getLabelFromValue("coat", item.details.coat || "") || "-",
+            coat_color: getLabelFromValue("coat_color", item.details.coat_color || "") || "-",
+            mask: getLabelFromValue("mask", item.details.mask || "") || "-",
+            beard: getLabelFromValue("beard", item.details.beard || "") || "-",
+            trousers: getLabelFromValue("trousers", item.details.trousers || "") || "-",
+            trousers_color: getLabelFromValue("trousers_color", item.details.trousers_color || "") || "-",
+            gender: getLabelFromValue("gender", item.details.gender || "") || "-",
+            emotion: getLabelFromValue("emotion", item.details.emotion || "") || "-",
+          }
+        };
+      });
+
+      const date = dayjs().format(
+        i18n.language === "th" ? "BBBB-MM-DD" : "YYYY-MM-DD",
+      );
+      const pdfName = `${t("file.search-multi-detect")}_${date}.pdf`;
+      await downloadSearchResultPdf(
+        updateData,
+        pdfName,
+        t,
+        i18n,
+        CENTER_FILE_URL,
       );
 
-      if (!confirmed) return;
-
-      await handleExportAllDataInPdfConfirm();
-      return;
+      setProgress(100);
+      setProgressMessage(t("progress-bar.file-download-complete"));
+      setPageLoading(false);
     }
-
-    setPageLoading(true);
-    setProgress(0);
-    setProgressMessage(t("progress-bar.data-downloading"));
-
-    const response = await fetchNewData(1, CHUNK_SIZE);
-
-    setProgress(80);
-    setProgressMessage(t("progress-bar.pdf-file-preparing"));
-
-    const updateData = response.data.map((item) => {
-      return {
-        ...item,
-        details: {
-          car_brand: getLabelFromValue("car_brand", item.details.car_brand || "") || "-",
-          car_color: getLabelFromValue("car_color", item.details.car_color || "") || "-",
-          car_type: getLabelFromValue("car_type", item.details.car_type || "") || "-",
-          age: item.details.age,
-          glasses: getLabelFromValue("glasses", item.details.glasses || "") || "-",
-          bag: getLabelFromValue("bag", item.details.bag || "") || "-",
-          bag_type: getLabelFromValue("bag_type", item.details.bag_type || "") || "-",
-          hat: getLabelFromValue("hat", item.details.hat || "") || "-",
-          hat_type: getLabelFromValue("hat_type", item.details.hat_type || "") || "-",
-          coat: getLabelFromValue("coat", item.details.coat || "") || "-",
-          coat_color: getLabelFromValue("coat_color", item.details.coat_color || "") || "-",
-          mask: getLabelFromValue("mask", item.details.mask || "") || "-",
-          beard: getLabelFromValue("beard", item.details.beard || "") || "-",
-          trousers: getLabelFromValue("trousers", item.details.trousers || "") || "-",
-          trousers_color: getLabelFromValue("trousers_color", item.details.trousers_color || "") || "-",
-          gender: getLabelFromValue("gender", item.details.gender || "") || "-",
-          emotion: getLabelFromValue("emotion", item.details.emotion || "") || "-",
-        }
-      };
-    });
-
-    const date = dayjs().format(
-      i18n.language === "th" ? "BBBB-MM-DD" : "YYYY-MM-DD",
-    );
-    const pdfName = `${t("file.search-multi-detect")}_${date}.pdf`;
-    await downloadSearchResultPdf(
-      updateData,
-      pdfName,
-      t,
-      i18n,
-      CENTER_FILE_URL,
-    );
-
-    setProgress(100);
-    setProgressMessage(t("progress-bar.file-download-complete"));
-    setPageLoading(false);
+    catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      PopupMessage(
+        t("message.error.error-while-export-data"),
+        errorMessage,
+        "error",
+      );
+    }
+    finally {
+      setProgress(0);
+      setProgressMessage("");
+      setPageLoading(false);
+    }
   };
 
   const handleExportAllDataInPdfConfirm = async () => {
@@ -946,6 +937,8 @@ const SearchMultiDetect: React.FC<SearchMultiDetectProps> = ({}) => {
         "error",
       );
     } finally {
+      setProgress(0);
+      setProgressMessage("");
       setPageLoading(false);
     }
   };
@@ -1449,7 +1442,7 @@ const SearchMultiDetect: React.FC<SearchMultiDetectProps> = ({}) => {
         {detailList.map((detail, index) => (
           <div key={index} className="flex gap-1">
             <p className="text-white text-sm underline">{`${t(`component.${detail.name.replace("_", "-")}`)}`}<span className="text-gray-400 text-sm">{`: `}</span></p>
-            <p className="text-white">{getLabelFromValue(detail.name, detail.value.toString())}</p>
+            <p className="text-white">{getLabelFromValue(detail.name, detail.value.toString().toLowerCase().includes("unrecognized") ? "-1" : detail.value.toString())}</p>
           </div>
         ))}
       </div>

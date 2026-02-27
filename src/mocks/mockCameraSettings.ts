@@ -7,6 +7,7 @@ export const mockCameras: Camera[] = Array.from({ length: 5 }, (_, index) => ({
   checkpoint_name: `Checkpoint ${index + 1}`,
   organization: ["Traffic Dept", "City Surveillance", "Highway Patrol"][index % 3],
   camera_ip: `192.168.1.${index + 10}`,
+  channel_id: `192.168.1.${index + 10}`,
   alpr_cam_id: 5000 + index,
   checkpoint_uid: `CHK-UID-${2000 + index}`,
   province_code: ((index % 5) + 1).toString(),

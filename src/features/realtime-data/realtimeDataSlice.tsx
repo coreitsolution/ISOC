@@ -1,10 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Status } from "../../constants/statusEnum";
-import { RealTimeLprData, RealTimeFaceData } from "../../features/types";
+import { RealTimeLprData, RealTimeFaceData, HumanDetection, VehicleDetection } from "../../features/types";
 
 interface RealtimeDataState {
   realtimeData: (RealTimeLprData | RealTimeFaceData)[];
-  multiRealtimeData: (RealTimeLprData | RealTimeFaceData)[];
+  multiRealtimeData: (HumanDetection | VehicleDetection)[];
   toastNotification: (RealTimeLprData | RealTimeFaceData)[];
   realtimeDataStatus: Status;
   realtimeDataError: string | null;
@@ -43,6 +43,27 @@ const realtimeDataSlice = createSlice({
         state.realtimeData.pop();
       }
     },
+    upsertMultiRealtimeData: (state, action: PayloadAction<HumanDetection | VehicleDetection>) => {
+      const newItem = action.payload;
+      
+      const exists = state.multiRealtimeData.some((d) => d.id === newItem.id);
+      if (exists) return;
+
+      state.multiRealtimeData.unshift(newItem);
+
+      const cameraItemsIndices = state.multiRealtimeData
+        .map((item, index) => (item.channel_id === newItem.channel_id ? index : -1))
+        .filter((index) => index !== -1);
+
+      if (cameraItemsIndices.length > 20) {
+        const oldestIndexForThisCamera = cameraItemsIndices[cameraItemsIndices.length - 1];
+        state.multiRealtimeData.splice(oldestIndexForThisCamera, 1);
+      }
+
+      if (state.multiRealtimeData.length > 1000) {
+        state.multiRealtimeData.pop();
+      }
+    },
     addToastMessage: (state, action: PayloadAction<RealTimeLprData | RealTimeFaceData>) => {
       const exists = state.toastNotification.some(t => t.id === action.payload.id);
       if (!exists) {
@@ -55,5 +76,5 @@ const realtimeDataSlice = createSlice({
   },
 })
 
-export const { upsertRealtimeData, addToastMessage, updateToastMessage } = realtimeDataSlice.actions;
+export const { upsertRealtimeData, addToastMessage, updateToastMessage, upsertMultiRealtimeData } = realtimeDataSlice.actions;
 export default realtimeDataSlice.reducer;

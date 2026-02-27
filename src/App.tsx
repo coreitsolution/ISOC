@@ -32,7 +32,7 @@ import SearchMultiDetect from './modules/search-multi-detect/SearchMultiDetect';
 // import CameraStatus from './modules/camera-status/CameraStatus';
 // import ManageCheckpointCameras from './modules/manage-checkpoint-cameras/ManageCheckpointCameras';
 import SuspectPeoplePage from './modules/suspect-people/SuspectPeople';
-import MultiRealTimeMonitor from './modules/real-time-monitor/RealTimeMonitor';
+import MultiRealTimeMonitor from './modules/multi-real-time-monitor/MultiRealTimeMonitor';
 
 // API
 import { clearError } from './features/auth/authSlice';
@@ -65,6 +65,7 @@ import {
 } from "./features/suspect-people/suspectPeopleSlice";
 import {
   upsertRealtimeData,
+  upsertMultiRealtimeData,
   addToastMessage,
 } from './features/realtime-data/realtimeDataSlice';
 import { addListNotification, NotificationType, removeNotification } from "./features/notification/notificationSlice";
@@ -483,9 +484,32 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
       detect_type: "face",
       watchList: message.watchlist,
       epoch_end: message.alarm_date,
+      capture_image_url: message.face_image_url,
+      person_image_url: message.picture_url,
+      personType: "normal",
     }
     dispatch(upsertRealtimeData(updatedData));
-  }, [dispatch, sliceDropdown.personTypes, sliceSuspectPeople.suspectPeople]);
+  }, [dispatch]);
+
+  const handleMultiHumanRealtimeMessage = useCallback(async (message: any) => {
+    const updatedData = {
+      ...message,
+      feedBackgroundColor: "#161817",
+      feedColor: "white",
+      detect_type: "human",
+    }
+    dispatch(upsertMultiRealtimeData(updatedData));
+  }, [dispatch]);
+
+  const handleMultiVehicleRealtimeMessage = useCallback(async (message: any) => {
+    const updatedData = {
+      ...message,
+      feedBackgroundColor: "#161817",
+      feedColor: "white",
+      detect_type: "vehicle",
+    }
+    dispatch(upsertMultiRealtimeData(updatedData));
+  }, [dispatch]);
 
   const handleCheckpointDataMessage = (message: Checkpoint) => {
     createNotificationToast({
@@ -666,6 +690,22 @@ const PrivateRouteWrapper = ({ children }: { children: React.ReactNode }) => {
     enabled,
   );
 
+  useSse(
+    CENTER_SERVER_SENT_EVENTS_URL,
+    CENTER_SERVER_SENT_EVENTS_TOKEN,
+    "human_detection_event",
+    handleMultiHumanRealtimeMessage,
+    enabled,
+  );
+
+  useSse(
+    CENTER_SERVER_SENT_EVENTS_URL,
+    CENTER_SERVER_SENT_EVENTS_TOKEN,
+    "vehicle_detection_event",
+    handleMultiVehicleRealtimeMessage,
+    enabled,
+  );
+
   // useSse(
   //   CENTER_SERVER_SENT_EVENTS_URL,
   //   CENTER_SERVER_SENT_EVENTS_TOKEN,
@@ -729,7 +769,7 @@ function App() {
           <Route path='center/real-time-monitor' element={
             <ProtectedRoute 
               permission={authData?.userInfo?.permissions
-              ? authData.userInfo.permissions.center.realtime.select
+              ? authData.userInfo.permissions.center.realtime?.select
               : undefined
               }
             >
@@ -739,7 +779,7 @@ function App() {
           <Route path='center/search-plate-with-condition' element={
             <ProtectedRoute 
               permission={authData?.userInfo?.permissions
-                ? authData.userInfo.permissions.center.conditionSearch.select
+                ? authData.userInfo.permissions.center.conditionSearch?.select
                 : undefined
               }
             >
@@ -749,7 +789,7 @@ function App() {
           <Route path='center/manage-user' element={
             <ProtectedRoute 
               permission={authData?.userInfo?.permissions
-                ? authData.userInfo.permissions.center.manageUser.select
+                ? authData.userInfo.permissions.center.manageUser?.select
                 : undefined
               }
             >
@@ -759,7 +799,7 @@ function App() {
           <Route path="center/special-plate" element={
             <ProtectedRoute
               permission={authData?.userInfo?.permissions
-              ? authData.userInfo.permissions.center.specialPlateManage.select
+              ? authData.userInfo.permissions.center.specialPlateManage?.select
               : undefined
               }
             >
@@ -769,7 +809,7 @@ function App() {
           <Route path="center/suspect-people" element={
             <ProtectedRoute
               permission={authData?.userInfo?.permissions
-              ? authData.userInfo.permissions.center.suspectPersonManage.select
+              ? authData.userInfo.permissions.center.suspectPersonManage?.select
               : undefined
               }
             >
@@ -779,7 +819,7 @@ function App() {
           <Route path="center/search-suspect-people" element={
             <ProtectedRoute
               permission={authData?.userInfo?.permissions
-              ? authData.userInfo.permissions.center.suspectPersonSearch.select
+              ? authData.userInfo.permissions.center.suspectPersonSearch?.select
               : undefined
               }
             >
@@ -789,7 +829,7 @@ function App() {
           <Route path='center/manage-user/add-edit-user' element={
             <ProtectedRoute 
               permission={authData?.userInfo?.permissions
-                ? authData.userInfo.permissions.center.manageUser.select
+                ? authData.userInfo.permissions.center.manageUser?.select
                 : undefined
               }
             >
@@ -802,7 +842,7 @@ function App() {
           <Route path='center/setting' element={
             <ProtectedRoute 
               permission={authData?.userInfo?.permissions
-                ? authData.userInfo.permissions.center.setting.select
+                ? authData.userInfo.permissions.center.setting?.select
                 : undefined
               }
             >

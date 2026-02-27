@@ -10,12 +10,8 @@ import timezone from 'dayjs/plugin/timezone';
 import { useAppDispatch } from '../../app/hooks';
 
 // Material UI
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Divider from '@mui/material/Divider';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import Checkbox from '@mui/material/Checkbox';
 
 // Icons
 import SearchIcon from '@mui/icons-material/Search';
@@ -24,7 +20,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { useHamburger } from "../../context/HamburgerContext";
 
 // Components
-import MultiGroupSelectCameras, { GroupedOption } from '../../components/multi-select/MultiGroupSelectCameras';
+import MultiSelectCameras from '../../components/multi-select/MultiSelectCameras';
 import BaseMap from '../../components/base-map/BaseMap';
 import FeedCard from '../../components/feed-card/FeedCard';
 import FeedImages from '../../components/feed-images/FeedImages';
@@ -36,7 +32,8 @@ import {
   Camera,
   CameraFaceResponse,
   NotificationList,
-  RealTimeLprData,
+  HumanDetection,
+  VehicleDetection,
 } from "../../features/types";
 
 // Images
@@ -45,7 +42,6 @@ import PinGoogleMap from "../../assets/icons/pin_google-maps.png";
 // Utils
 import { 
   reformatString,
-  formatNumber, 
 } from "../../utils/commonFunction";
 import { fetchClient, combineURL } from "../../utils/fetchClient";
 import { PopupMessage } from '../../utils/popupMessage';
@@ -62,25 +58,37 @@ import { useTranslation } from 'react-i18next';
 // Config
 import { getUrls } from '../../config/runtimeConfig';
 
-// API
+// Constant
 import {
-  setCameraSelected
-} from '../../features/vehicle-count/VehicleCountSlice';
-import {
-  fetchVehicleCountThunk
-} from "../../features/vehicle-count/VehicleCountSlice";
+  GENDER,
+  COAT,
+  COAT_COLORS,
+  TROUSER,
+  TROUSER_COLORS,
+  HAT,
+  HAT_TYPE,
+  BAG,
+  BAG_TYPE,
+  EMOTION,
+  GLASSES,
+  BEARD,
+  MASK,
+  VEHICLE_MAKE,
+  VEHICLE_COLOR,
+  VEHICLE_TYPE,
+} from "../../constants/dropdown";
 
 dayjs.extend(buddhistEra);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-interface RealTimeMonitorProps {
+interface MultiRealTimeMonitorProps {
 
 }
 
-const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
+const MultiRealTimeMonitor: React.FC<MultiRealTimeMonitorProps> = () => {
   const dispatch = useAppDispatch();
-  const { CENTER_API, DETAIL_INFORMATION } = getUrls();
+  const { CENTER_API } = getUrls();
 
   // i18n
   const { t, i18n } = useTranslation();
@@ -92,27 +100,22 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
   const [selectedCameraIds, setSelectedCameraIds] = useState<Camera[]>([]);
   const [map, setMap] = useState<LeafletMap | null>(null);
   const [cameraList, setCameraList] = useState<Camera[]>([]);
-  const todayMidnight = dayjs().startOf('day');
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
 
   // State
   const [searchCheckpointsVisible, setSearchCheckpointsVisible] = useState(false);
-  const [isSearchClicked, setIsSearchClicked] = useState(true); 
+  const [isSearchClicked, setIsSearchClicked] = useState(true);
   const [hasInitialSearchRun, setHasInitialSearchRun] = useState(false);
-  const [isShowLicensePlate, setIsShowLicensePlate] = useState(true);
-  const [isShowFace, setIsShowFace] = useState(true);
   const [isShowRealtimeCamera, setIsShowRealtimeCamera] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Options
-  const [camerasOption, setCamerasOption] = useState<GroupedOption[]>([]);
-  const [selectedCameraObjects, setSelectedCameraObjects] = useState<GroupedOption[]>([]);
+  const [camerasOption, setCamerasOption] = useState<{ label: string ,value: any }[]>([]);
+  const [selectedCameraObjects, setSelectedCameraObjects] = useState<{value: any, label: string}[]>([]);
 
   // Redux
   const cameraRefreshKey = useSelector((state: RootState) => state.refresh.cameraRefreshKey);
-  const sliceDropdown = useSelector((state: RootState) => state.dropdownData)
   const { multiRealtimeData } = useSelector((state: RootState) => state.realTimeData)
-  const { vehicleCount } = useSelector((state: RootState) => state.vehicleCountData)
   
   const handleSelectPoint = (uid: string) => {
     setIsShowRealtimeCamera(true);
@@ -135,18 +138,27 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
   }, [])
 
   useEffect(() => {
-    if (camerasOption.length > 0) {
-      setSelectedCameraObjects(camerasOption);
-      setSelectedCameraIds(cameraList);
+    setSelectedCameraObjects([{ label: t('dropdown.all'), value: "0" }]);
+  }, [i18n.language, i18n.isInitialized])
+
+  useEffect(() => {
+    if (cameraList.length > 0) {
+      const hasAll = selectedCameraObjects.some((v) => v.value === "0");
+      const newCameraList = hasAll ? cameraList : cameraList.filter(c => selectedCameraObjects.map(sc => sc.value).includes(c.channel_id));
+      setSelectedCameraIds(newCameraList);
+      if (prevCameraIds.length === 0 && hasAll) {
+        setPrevCameraIds(cameraList);
+      }
     }
-  }, [camerasOption, cameraList]);
+  }, [selectedCameraObjects, cameraList])
 
   useEffect(() => {
     if (cameraList) {
-      const options = buildCameraOptions(cameraList);
-      setCamerasOption(options);
-      
-      handleCameraChange(options); 
+      const options = cameraList.map((row) => ({
+        label: row.camera_name,
+        value: row.channel_id,
+      }))
+      setCamerasOption([{ label: t('dropdown.all'), value: "0" }, ...options])
     }
   }, [cameraList, i18n.language]);
 
@@ -167,7 +179,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
       for (const camera of camerasToProcess) {
         allNotificationItems.push({
           id: camera.id,
-          camera_uid: camera.uid,
+          camera_uid: camera.channel_id,
           camera_name: camera.camera_name || "",
           plate_number: "",
           plate_prefix: "",
@@ -219,12 +231,11 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
   }, [isSearchClicked, map]);
 
   useEffect(() => {
-    if (map && cameraList.length > 0 && selectedCameraIds.length > 0 && !hasInitialSearchRun) {
+    if (map && cameraList.length > 0 && !hasInitialSearchRun) {
       handleInitialSearch();
       setHasInitialSearchRun(true);
     }
-  }, [map, cameraList, selectedCameraIds, hasInitialSearchRun]);
-
+  }, [map, cameraList, hasInitialSearchRun]);
 
   const fetchData = async () => {
     try {
@@ -247,11 +258,19 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       PopupMessage(t('message.error.error-while-fetching-data'), errorMessage, "error");
-    }
-    finally {
       setCameraList([]);
     }
   };
+
+  const handleInitialSearch = useCallback(async () => {
+    if (cameraList.length === 0) return;
+
+    setIsSearchClicked(true);
+    setSelectedCameraIds(cameraList);
+    setPrevCameraIds(cameraList);
+
+    await drawBaseMapPins(cameraList);
+  }, [cameraList]);
 
   const drawBaseMapPins = async (cameras: Camera[]) => {
     // Clear previous checkpoints first
@@ -264,7 +283,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
 
       return {
         id: camera.id,
-        camera_uid: camera.uid,
+        camera_uid: camera.channel_id,
         camera_name: camera.camera_name,
         plate_number: "",
         plate_prefix: "",
@@ -287,29 +306,25 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
     await searchSpecialCheckpoint(data);
   }
 
-  const handleCameraChange = (selected: GroupedOption[]) => {
-    setSelectedCameraObjects(selected);
+  const handleCameraChange = (ids: string[]) => {
+    let newIds: string[];
 
-    const selectedUids = selected.map(s => s.value);
-    const filtered = cameraList.filter(c => selectedUids.includes(c.uid));
+    if (ids.length === 0 || ids.includes("0")) {
+      newIds = ["0"];
+    } else {
+      newIds = ids;
+    }
 
-    setSelectedCameraIds(filtered);
-    setIsSearchClicked(false);
+    const selectedObjects = camerasOption.filter(c => newIds.includes(c.value));
+    setSelectedCameraObjects(selectedObjects);
+
+    const hasAll = selectedObjects.some((v) => v.value === "0");
+    setSelectedCameraIds(hasAll ? cameraList : cameraList.filter(c => newIds.includes(c.channel_id)));
+
+    if (isSearchClicked) {
+      setIsSearchClicked(false);
+    }
   };
-
-
-  const handleInitialSearch = async () => {
-    if (selectedCameraIds.length === 0) return;
-
-    setIsSearchClicked(true); 
-    
-    const cameraUidList = selectedCameraIds.map((c) => c.uid);
-    dispatch(setCameraSelected(cameraUidList));
-    setPrevCameraIds(selectedCameraIds);
-    await dispatch(fetchVehicleCountThunk({ cameraUids: cameraUidList.join(",") }));
-
-    await drawBaseMapPins(selectedCameraIds);
-  }
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -319,102 +334,95 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
   const executeSearch = useCallback(async (cameraData: Camera[]) => {
     if (cameraData.length === 0) {
       await clearSearchPlaces();
-      dispatch(setCameraSelected(cameraList.map((c) => c.uid)));
       setPrevCameraIds([]);
-      setSelectedCameraObjects(camerasOption);
-
+      setSelectedCameraObjects([{ label: t('dropdown.all'), value: "0" }]);
       setIsSearchClicked(false);
-      await dispatch(fetchVehicleCountThunk({ cameraUids: cameraList.map(c => c.uid).join(",") }));
       return;
     }
 
     setIsSearchClicked(true);
 
     const removedIds = prevCameraIds.filter(
-      (prev) => !cameraData.some((curr) => curr.uid === prev.uid)
+      (prev) => !cameraData.some((curr) => curr.channel_id === prev.channel_id)
     );
 
-    await Promise.all(
-      removedIds.map(async (camera) => {
-        clearPlaceMarkerWithLocation({
-          lat: parseFloat(camera.latitude),
-          lng: parseFloat(camera.longitude),
-        });
-      })
-    )
+    for (const camera of removedIds) {
+      clearPlaceMarkerWithLocation({
+        lat: parseFloat(camera.latitude),
+        lng: parseFloat(camera.longitude),
+      });
+    }
 
-    dispatch(setCameraSelected(cameraData.map((c) => c.uid)));
     setPrevCameraIds(cameraData);
 
     // Refresh Map Pins
     await drawBaseMapPins(cameraData);
-    await dispatch(fetchVehicleCountThunk({ cameraUids: cameraData.map(c => c.uid).join(",") }));
   }, [dispatch, prevCameraIds, clearSearchPlaces, clearPlaceMarkerWithLocation, t]);
 
-  const handleClearSearch = async () => {
-    setSelectedCameraObjects(camerasOption);
-    setSelectedCameraIds(cameraList);
-    clearSearchPlaces();
-    setIsSearchClicked(false);
 
-    dispatch(setCameraSelected(cameraList.map(c => c.uid)));
+  const handleClearSearch = async () => {
+    setSelectedCameraObjects([{ label: t('dropdown.all'), value: "0" }]);
+    clearSearchPlaces();
+    setIsSearchClicked(false); 
+    setPrevCameraIds([]);
   };
 
   const handleMapLoad = useCallback((mapInstance: LeafletMap | null) => {
     setMap(mapInstance)
   }, []);
 
-  const handleCamerasSelected = useCallback(async (cameraSelected: GroupedOption[]) => {
-    setSelectedCameraObjects(cameraSelected);
+  const handleCamerasSelected = useCallback(async (cameraSelected: { value: any, label: string }[]) => {
+    const syncSelectedObjects = camerasOption.filter(option => 
+      cameraSelected.some(selected => selected.value === option.value)
+    );
 
-    const selectedUids = cameraSelected.map(c => c.value);
-    const filtered = cameraList.filter(c => selectedUids.includes(c.uid));
+    const hasAll = syncSelectedObjects.some((v) => v.value === "0");
 
-    setSelectedCameraIds(filtered);
-    await executeSearch(filtered);
-  }, [cameraList, executeSearch]);
-
-  const getProvinceName = (regionCode: string) => {
-    const province = sliceDropdown.regions?.data.find(region => region.region_code === regionCode);
-    return province?.name_th || "";
-  }
-
-  const createFeedVehicleInfo = (data: RealTimeLprData, index: number, key: string) => {
-    const provinceName = getProvinceName(data.region_code);
-    
-    const vehicleColor = sliceDropdown.vehicleColors?.data.find(color => color.color === data.vehicle_color);
-
-    let newVehicleColor = "-";
-    if (vehicleColor) {
-      newVehicleColor = i18n.language === "th"
-        ? vehicleColor.color_th || "-"
-        : vehicleColor.color_en || "-";
+    if (hasAll || syncSelectedObjects.length === 0) {
+      const allObj = camerasOption.find(o => o.value === "0") || { label: t('dropdown.all'), value: "0" };
+      setSelectedCameraObjects([allObj]);
+      setSelectedCameraIds(cameraList);
+      await executeSearch(cameraList);
     } 
     else {
-      newVehicleColor = data.vehicle_color || "-";
+      setSelectedCameraObjects(syncSelectedObjects);
+      
+      const filtered = cameraList.filter((c) => 
+          syncSelectedObjects.some((sc) => sc.value === c.channel_id)
+      );
+      setSelectedCameraIds(filtered);
+      await executeSearch(filtered);
     }
+  }, [camerasOption, cameraList, t, executeSearch]);
+
+  const createFeedVehicleInfo = (data: VehicleDetection, index: number, key: string) => {
+    const vehicleType = getLocalizedText(VEHICLE_TYPE, data.car_type);
+    const vehicleColor = getLocalizedText(VEHICLE_COLOR, data.car_color);
+    const vehicleBrand = getLocalizedText(VEHICLE_MAKE, data.car_brand?.toLowerCase().includes("unrecognized") ? "-1" : data.car_brand);
+
     return (
       <FeedCard key={key} id={data.id} index={index}>
         <p
           className="text-center"
           style={{ backgroundColor: data.feedBackgroundColor, color: data.feedColor }}
         >
-          {`${data.plate}${provinceName && ` ${provinceName}`}`}
+          {t("text.vehicle")}
         </p>
 
         <p className='bg-[#383A39] text-center'>
-          {dayjs(data.epoch_end).format(i18n.language === 'th' ? 'DD-MM-BBBB HH:mm:ss' : 'DD-MM-YYYY HH:mm:ss')} | <span className='font-bold'>{`${data.plate_confidence}%`}</span>
+          {dayjs(data.capture_time).format(i18n.language === 'th' ? 'DD-MM-BBBB HH:mm:ss' : 'DD-MM-YYYY HH:mm:ss')}
         </p>
 
         {/* Checkpoint */}
-        <div className='pl-[30px] col-span-2'>{`${t('text.checkpoint')}: ${cameraList.find(cp => cp.uid === data.camera_uid)?.camera_name || "-"}`}</div>
+        <div className='pl-[30px] col-span-2'>{`${t('text.checkpoint')}: ${cameraList.find(cp => cp.channel_id === data.channel_id)?.camera_name|| "-"}`}</div>
 
         {/* Images */}
         <FeedImages 
-          image1={data.vehicle_image_url}
-          image1Alt={"Vehicle Image"}
-          image2={data.plate_image_url}
-          image2Alt={"Plate Image"}
+          image1={data.vehicle_image_url || ""}
+          image1Alt={"Detect Image"}
+          image2={data.picture_url || ""}
+          image2Alt={"Overview Image"}
+          isMulti={true}
         />
 
         {/* Vehicle Info */}
@@ -422,16 +430,15 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
           <div className="h-full flex flex-col p-1 pl-3 space-y-2">
             {
               [
-                { label: t('feed-data.type'), value: data.vehicle_body_type },
-                { label: t('feed-data.brand'), value: data.vehicle_make },
-                { label: t('feed-data.color'), value: newVehicleColor },
-                { label: t('feed-data.model'), value: data.vehicle_model },
+                { label: t('feed-data.car-type'), value: vehicleType },
+                { label: t('feed-data.car-brand'), value: vehicleBrand },
+                { label: t('feed-data.car-color'), value: vehicleColor },
               ].map(({ label, value }, idx) => (
                 <div className="flex" key={idx}>
-                  <span className="w-[55px] text-left">{label}</span>
+                  <span className="w-[70px] text-left">{label}</span>
                   <span className="mx-1">:</span>
-                  <span className="w-[135px] truncate" title={reformatString(value)}>
-                    {reformatString(value)}
+                  <span className="w-[135px] truncate" title={value}>
+                    {value}
                   </span>
                 </div>
               ))
@@ -442,16 +449,21 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
     )
   }
 
-  const createFeedFaceInfo = (data: any, index: number, key: string) => {
-    const watchList = data.watchlist || undefined;
-    let prefix = undefined;
-    let newPrefix = "";
-    if (watchList) {
-      prefix = sliceDropdown.prefix?.data.find(prefix => prefix.id === watchList?.title_id);
-      newPrefix = i18n.language === "th"
-        ? prefix?.title_th || ""
-        : prefix?.title_en || "";
-    }
+  const createFeedFaceInfo = (data: HumanDetection, index: number, key: string) => {
+    const age = `${data.age} ${t("text.years")}`;
+    const gender = getLocalizedText(GENDER, data.gender);
+    const coat = getLocalizedText(COAT, data.coat);
+    const coat_color = getLocalizedText(COAT_COLORS, data.coat_color);
+    const trousers = getLocalizedText(TROUSER, data.trousers);
+    const trousers_color = getLocalizedText(TROUSER_COLORS, data.trousers_color);
+    const hat = getLocalizedText(HAT, data.hat);
+    const hat_type = getLocalizedText(HAT_TYPE, data.hat_type);
+    const bag = getLocalizedText(BAG, data.bag);
+    const bag_type = getLocalizedText(BAG_TYPE, data.bag_type);
+    const emotion = getLocalizedText(EMOTION, data.emotion);
+    const glasses = getLocalizedText(GLASSES, data.glasses);
+    const beard = getLocalizedText(BEARD, data.beard);
+    const mask = getLocalizedText(MASK, data.mask);
     
     return (
       <FeedCard key={key} id={data.id} index={index}>
@@ -459,60 +471,82 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
           className="text-center"
           style={{ ...(data.feedBackgroundColor && { backgroundColor: data.feedBackgroundColor }), color: data.feedColor }}
         >
-          {`${t('text.name')} : ${!newPrefix && !watchList?.firstname && !watchList?.lastname ? "-" : `${newPrefix}${watchList?.firstname} ${watchList?.lastname}`}`}
+          {t("text.human")}
         </p>
 
         <p className='bg-[#383A39] text-center'>
-          {dayjs(data.epoch_end).format(i18n.language === 'th' ? 'DD-MM-BBBB HH:mm:ss' : 'DD-MM-YYYY HH:mm:ss')} | <span className='font-bold'>{`${data.similarity || 0}%`}</span>
+          {dayjs(data.capture_time).format(i18n.language === 'th' ? 'DD-MM-BBBB HH:mm:ss' : 'DD-MM-YYYY HH:mm:ss')}
         </p>
 
         {/* Checkpoint */}
-        <div className='pl-[30px] col-span-2'>{`${t('text.checkpoint')}: ${data.base_camera?.camera_name || "-"}`}</div>
+        <div className='pl-[30px] col-span-2'>{`${t('text.checkpoint')}: ${cameraList.find(cp => cp.channel_id === data.channel_id)?.camera_name|| "-"}`}</div>
 
         {/* Images */}
-        <FeedImages 
-          image1={data.capture_image_url}
-          image1Alt={"Detect Image"}
-          image2={data.person_image_url}
-          image2Alt={"Upload Image"}
-          isShowOnlyImage1={watchList ? false : true}
-          isFace={true}
-        />
+        <div className='flex justify-center items-center h-full w-full'>
+          <FeedImages 
+            image1={data.human_image_url || ""}
+            image1Alt={"Detect Image"}
+            image2={data.picture_url || ""}
+            image2Alt={"Overview Image"}
+            isFace={true}
+          />
+        </div>
 
         {/* Behavior Info */}
         <div className="w-full h-full bg-[#161817]">
           <div className="h-full flex flex-col p-1 pl-3 space-y-2">
-            <span className="w-full text-left">{`${t('text.behavior')} :`}</span>
-            <div className="flex w-full">
-              <span className="w-full text-left">{watchList?.behavior || "-"}</span>
-            </div>
+            {
+              [
+                { label: t('feed-data.age'), value: age },
+                { label: t('feed-data.gender'), value: gender },
+                { label: t('feed-data.emotion'), value: emotion },
+                { label: t('feed-data.glasses'), value: glasses },
+                { label: t('feed-data.beard'), value: beard },
+                { label: t('feed-data.mask'), value: mask },
+                { label: t('feed-data.coat'), value: coat },
+                { label: t('feed-data.coat-color'), value: coat_color },
+                { label: t('feed-data.trousers'), value: trousers },
+                { label: t('feed-data.trousers-color'), value: trousers_color },
+                { label: t('feed-data.hat'), value: hat },
+                { label: t('feed-data.hat-type'), value: hat_type },
+                { label: t('feed-data.bag'), value: bag },
+                { label: t('feed-data.bag-type'), value: bag_type },
+              ].map(({ label, value }, idx) => (
+                <div className="flex" key={idx}>
+                  <span className="w-[70px] text-left">{label}</span>
+                  <span className="mx-1">:</span>
+                  <span className="w-[135px] truncate" title={value}>
+                    {value}
+                  </span>
+                </div>
+              ))
+            }
           </div>
         </div>
       </FeedCard>
     )
   }
 
+  const getLocalizedText = <
+    T extends { value: string; text_th: string; text_en: string }
+  >(
+    list: T[],
+    value?: string | null
+  ) => {
+    const item = list.find(
+      (i) => i.text_en.toLowerCase() === value?.toLowerCase()
+    );
+
+    if (!item) return "-";
+
+    return i18n.language === "th"
+      ? item.text_th
+      : reformatString(item.text_en);
+  };
+
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    handleSearch(e);
-  }
-
-  const buildCameraOptions = (cameras: Camera[]): GroupedOption[] => {
-    const lpr = cameras.filter(c => c.group === "lpr");
-    const face = cameras.filter(c => c.group === "face");
-
-    return [
-      ...lpr.map(c => ({
-        value: c.uid,
-        label: c.camera_name,
-        group: "lpr" as const,
-      })),
-      ...face.map(c => ({
-        value: c.uid,
-        label: c.camera_name,
-        group: "face" as const,
-      })),
-    ];
+    handleSearch();
   };
 
   return (
@@ -530,7 +564,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
                 <div className='flex flex-col w-full space-y-2'>
                   <p className='text-[15px]'>{t('component.checkpoint-2')}</p>
                   <div className='w-full items-center justify-center'>
-                    <MultiGroupSelectCameras 
+                    <MultiSelectCameras 
                       limitTags={3} 
                       selectedValues={selectedCameraObjects}
                       options={camerasOption} 
@@ -581,70 +615,6 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
               </div>
             </div>
           </form>
-          <div className='flex items-end justify-end'>
-            {
-              DETAIL_INFORMATION?.FILTER_FACE_AND_LICENSE_PLATE && (
-                <FormGroup row>
-                  <FormControlLabel 
-                    control={
-                    <Checkbox 
-                      checked={isShowLicensePlate} 
-                      onChange={(e) => setIsShowLicensePlate(e.target.checked)}
-                      sx={{
-                        fontSize: 16,
-                        color: "#FFFFFF",
-                        "&.Mui-checked": {
-                          color: "#FFFFFF",
-                        },
-                        "& .MuiSvgIcon-root": {
-                          fontSize: 30
-                        }
-                      }}
-                    />
-                    } 
-                    label={t('checkbox.license-plate')} 
-                  />
-                  <FormControlLabel 
-                    control={
-                    <Checkbox 
-                      checked={isShowFace} 
-                      onChange={(e) => setIsShowFace(e.target.checked)}
-                      sx={{
-                        fontSize: 16,
-                        color: "#FFFFFF",
-                        "&.Mui-checked": {
-                          color: "#FFFFFF",
-                        },
-                        "& .MuiSvgIcon-root": {
-                          fontSize: 30
-                        }
-                      }}
-                    />
-                    } 
-                    label={t('checkbox.face')} 
-                  />
-                </FormGroup>
-              )
-            }
-            {
-              DETAIL_INFORMATION?.TOTAL_VEHICLE_COUNT && (
-                <div 
-                  className='flex flex-col gap-1 bg-[#384043] w-[230px] px-3 py-2'
-                  style={{
-                    borderRadius: "0 20px 0 20px"
-                  }}
-                >
-                  <p className='text-[12px] text-[#CCD0CF]'>{`${t('text.start-from')} : ${
-                    i18n.language === "th" ? todayMidnight.format("DD-MM-BBBB HH:mm:ss") : todayMidnight.format("DD-MM-YYYY HH:mm:ss")}`}</p>
-                  <div className='flex h-[50px] justify-end items-end gap-1 text-white'>
-                    <p className='text-[38px]'>{formatNumber(vehicleCount?.data?.count || 0)}<span className='text-[12px] ml-1'>{t('text.list')}</span></p>
-                  </div>
-                  <Divider sx={{ borderColor: "#FFFFFF", width: "100%" }} />
-                  <p className='text-[15px] text-[#CCD0CF] text-center'>{t('text.current-number-detections')}</p>
-                </div>
-              )
-            }
-          </div>
         </div>
 
         {/* Content Part */}
@@ -669,25 +639,22 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
               {
                 multiRealtimeData
                   .filter((data) => {
-                    const isCameraMatched = prevCameraIds.some((cam) => cam.uid === (data.detect_type === "face" ? (data as any).base_camera?.uid : data.camera_uid));
-                    if (!isCameraMatched) return false;
-
-                    const isFaceMatch = data.detect_type === "face" && isShowFace;
-                    const isLprMatch = (data.detect_type === "lpr" || !data.detect_type) && isShowLicensePlate;
-
-                    return isFaceMatch || isLprMatch;
+                    const isCameraMatched = prevCameraIds.some(
+                      (cam) => cam.channel_id === (data as any).channel_id
+                    );
+                    return isCameraMatched;
                   })
                   .slice(0, 20) 
                   .map((data, index) => {
-                    const key = data.detect_type === "face"
-                                  ? `face_${data.id}`
-                                  : `lpr_${(data as RealTimeLprData).id}`;
+                    const key = data.detect_type === "human"
+                                  ? `human_${(data as HumanDetection).id}`
+                                  : `vehicle_${(data as VehicleDetection).id}`;
 
-                    if (data.detect_type === "face" && isShowFace) {
-                      return createFeedFaceInfo((data), index, key)
+                    if (data.detect_type === "human") {
+                      return createFeedFaceInfo((data as HumanDetection), index, key)
                     }
                     
-                    return createFeedVehicleInfo((data as RealTimeLprData), index, key)
+                    return createFeedVehicleInfo((data as VehicleDetection), index, key)
                   })
               }
             </AnimatePresence>
@@ -722,4 +689,4 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = () => {
   )
 }
 
-export default RealTimeMonitor;
+export default MultiRealTimeMonitor;

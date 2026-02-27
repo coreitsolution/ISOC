@@ -7,7 +7,7 @@ import { TDocumentDefinitions, Content } from "pdfmake/interfaces";
 import { StatisticPdfData } from "../../../features/chart/types";
 
 // Utils
-import { loadFont, formatNumber } from "../../../utils/commonFunction";
+import { loadFont, formatNumber, loadImageAsBase64 } from "../../../utils/commonFunction";
 
 // Configure pdfMake fonts
 const configureFonts = async () => {
@@ -514,23 +514,6 @@ function createChartSection(
       },
     ],
   };
-}
-
-// Helper function to load image as base64
-async function loadImageAsBase64(url: string): Promise<string> {
-  try {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.error("Failed to load image:", error);
-    return "";
-  }
 }
 
 export const downloadStatisticPdf = async (
